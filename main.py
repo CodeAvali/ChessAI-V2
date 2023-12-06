@@ -1,6 +1,7 @@
 #Live document for current work - Code Avali - Chessbot NEA
 
 import numpy as np
+import Moves_Inital
 global board 
 global White_Playing
 global White_moves
@@ -156,21 +157,39 @@ def pawn(create, White_Playing):
   #Hence, create a tuple containing new moves 
 
   new = []
+  temp = ''
 
-  if White_Playing:
-    create_y -= 1
+  create_y -= 1
+  if (White_Playing) and (not blocked((create_x, create_y))): 
     temp = (create_x, create_y)  
 
     #Add any additional conditions - Capture; enpassant 
-  else: 
+  create_y += 2
+  if (not White_Playing) and (not blocked((create_x, create_y))):
     create_y += 1
     temp = (create_x, create_y)   
     #Add any additional conditions - Caputre; enpassant 
 
-  temp = (create, tuple(temp))
-  new.append(temp)
+  if temp != '':
+    temp = (create, tuple(temp))
+    new.append(temp)
+
+  print(new)
 
   return new
+
+  #---- 
+
+def blocked(create):
+  create_x, create_y = create[0], create[1]
+
+  if board[create_y][create_x] != Empty_:
+    print("YAY")
+    return True 
+  else:
+    print("AWW")
+    return False 
+
 
   #-----
 
@@ -184,26 +203,26 @@ def straight(create):
   new = []
 
   x_pointer = create_x
-  while x_pointer < 7:
+  while x_pointer < 7 and (not(blocked((x_pointer + 1, create_y)))):
     x_pointer += 1
     temp = (x_pointer, create_y)  
     temp = (create, tuple(temp))
     new.append(temp)
   x_pointer = create_x
-  while x_pointer > 0:
+  while x_pointer > 0 and (not(blocked((x_pointer - 1, create_y)))):
     x_pointer -= 1 
     temp = (x_pointer, create_y)
     temp = (create, tuple(temp))
     new.append(temp)
 
   y_pointer = create_y 
-  while y_pointer < 7:
+  while y_pointer < 7 and (not(blocked((create_x, y_pointer + 1)))):
     y_pointer += 1
     temp = (create_x, y_pointer)  
     temp = (create, tuple(temp))
     new.append(temp)
   y_pointer = create_y
-  while y_pointer > 0:
+  while y_pointer > 0 and (not(blocked((create_x, y_pointer - 1)))): 
     y_pointer -= 1 
     temp = (create_x, y_pointer)  
     temp = (create, tuple(temp))
@@ -220,28 +239,28 @@ def diagonal(create):
   create_x, create_y = create[0], create[1]
 
   x_pointer, y_pointer = create_x, create_y
-  while x_pointer < 7 and y_pointer < 7:
+  while (x_pointer, y_pointer < 7) and (not(blocked((x_pointer + 1, y_pointer + 1)))): 
     x_pointer += 1
     y_pointer += 1 
     temp = (x_pointer, y_pointer)
     temp = (create, tuple(temp))
     new.append(temp)
   x_pointer, y_pointer = create_x, create_y
-  while x_pointer > 0 and y_pointer < 7:
+  while (x_pointer > 0 and y_pointer < 7) and (not(blocked))
     x_pointer -= 1
     y_pointer += 1 
     temp = (x_pointer, y_pointer)
     temp = (create, tuple(temp))
     new.append(temp)
   x_pointer, y_pointer = create_x, create_y
-  while x_pointer < 7 and y_pointer > 0:
+  while (x_pointer < 7 and y_pointer > 0) and (not(blocked((x_pointer + 1, y_pointer - 1)))):
     x_pointer += 1
     y_pointer -= 1
     temp = (x_pointer, y_pointer)
     temp = (create, tuple(temp))
     new.append(temp)
   x_pointer, y_pointer = create_x, create_y 
-  while x_pointer > 0 and y_pointer > 0:
+  while (x_pointer, y_pointer > 0) and (not(blocked((x_pointer - 1, y_pointer - 1)))):
     x_pointer -= 1
     y_pointer -= 1
     temp = (x_pointer, y_pointer)
@@ -311,6 +330,8 @@ def adjecent(create):
 
   return new
 
+
+
 #1. ----------- Board creation -------------------
 
 W_Pawn = "♟︎"
@@ -340,8 +361,9 @@ board = [[B_Rook, B_Knig, B_Bish, B_Quee, B_King, B_Bish, B_Knig, B_Rook],
         [W_Rook, W_Knig, W_Bish, W_Quee, W_King, W_Bish, W_Knig, W_Rook]]
 
 Moves_Tuple = []
-White_moves = [((0, 6), (0, 5)), ((0, 6), (0, 4)), ((1, 6), (1, 5)), ((1, 6), (1, 4)), ((2, 6), (2, 5)), ((2, 6), (2, 4)), ((3, 6), (3, 5)), ((3, 6), (3, 4)), ((4, 6), (4, 5)), ((4, 6), (4, 4)), ((5, 6), (5, 5)), ((5, 6), (5, 4)), ((6, 6), (6, 5)), ((6, 6), (6, 4)), ((7, 6), (7, 5)), ((7, 6), (7, 4)), ((1, 7), (0, 5)), ((1, 7), (2, 5)), ((6, 7), (5, 4)), ((6, 7), (7, 5)), ((2, 7), (1,6)), ((4, 7), (4, 6))]
-Black_moves = [((0, 1), (0, 2)), ((0, 1), (0, 3)), ((1, 1), (1, 2)), ((1, 1), (1, 3)),  ((2, 1), (2, 2)), ((2, 1), (2, 3)),  ((3, 1), (3, 2)), ((3, 1), (3, 3)),  ((4, 1), (4, 2)), ((4, 1), (4, 3)),  ((5, 1), (5, 2)), ((5, 1), (5, 3)),  ((6, 1), (6, 2)), ((6, 1), (6, 3)),  ((7, 1), (7, 2)), ((7, 1), (7, 3))]
+
+White_moves = Moves_Inital.White_moves
+Black_moves = Moves_Inital.Black_moves
 
 #2. ----------- Performing a move --------------------
 
