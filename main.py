@@ -193,11 +193,12 @@ def blocked(create, move_from_x, move_from_y):
     temp = (move_from_x, move_from_y)
     temp = (temp, tuple(create))
     Blocked_Tuple.append(temp)
-    if board[move_from_y][move_from_x] in (W_Pawn, B_Pawn):
+    if (board[move_from_y][move_from_x] in (W_Pawn, B_Pawn)) and (board[create_y][create_x] in (W_Pawn, B_Pawn)):
       temp = (move_from_x, move_from_y)
       temp = (tuple(create), temp)
-      #TO DO: remove move from moves tuple 
+      #TO DO: remove pawn move from moves tuple - so that direct pawn captures are NOT possible 
       Blocked_Tuple.append(temp)    
+    #TO DO: Check for own peices - reasonably to enforce rules; esp for horses and so on 
     print("Blocked:", Blocked_Tuple)
     return True 
   else:
@@ -301,7 +302,7 @@ def knight(create):
   pivot.append((create_x + 1, create_y - 2))
   pivot.append((create_x - 1, create_y - 2))
 
-  for i in range(len(pivot)-1):                    #Range check; will likely format into indep func
+  for i in range(len(pivot)-1):                    #Range check; will likely format into indep function for consistency 
     if pivot[i][0] <= 8 and pivot[i][0] >= 0:
       if pivot[i][1] <= 8 and pivot[i][1] >= 0:
         temp = (create, tuple(pivot[i]))
@@ -379,7 +380,7 @@ Blocked_White_moves = Moves_Inital.Blocked_White_moves
 Black_moves = Moves_Inital.Black_moves
 Blocked_Black_moves = Moves_Inital.Blocked_Black_moves
 
-#2. ----------- Performing a move --------------------
+#2. ----------- Performing a move/MAIN GAMEPLAY LOOP --------------------
 
 Playing = True
 print(np.matrix(board))
