@@ -7,6 +7,7 @@ global White_Playing
 global White_moves
 global Black_moves 
 global Moves_Tuple
+global Blocked_Tuple
 space = ' '
 
 # (3) ----------- Functions ------------------
@@ -62,7 +63,7 @@ def absurd(move_to, move_from):
       Exception += 'MOVE VALDIATION: You cannot move to a black peice as White'
 
   if Exception != '':
-    print(Exception)
+    print(Exception, board[move_from[1]][move_from[0]])
     return False
   else: 
     return True 
@@ -82,6 +83,14 @@ def perform(move_to, move_from, board):
   peice = board[(move_from[1])][(move_from[0])]  #Collect moving peice into temp variable 
   board[(move_from[1])][(move_from[0])] = Empty_  #Remove moving peice
   board[(move_to[1])][(move_to[0])] = peice #Hence, write the peice into the location 
+
+  #Hence; store new to respective holder
+  if White_Playing:                       #TO DO Reverse order
+    White_moves = clean(move_from, White_moves)
+    #Black_moves = clean(move_to, Black_moves)        #Perform generation func 
+  else:
+    Black_moves = clean(move_from, Black_moves)
+    #White_moves = clean(move_to, White_moves)        #Perform generation func     
 
   #Check for peice to generate new moves
   if peice in (W_Pawn, B_Pawn):
@@ -104,15 +113,11 @@ def perform(move_to, move_from, board):
     print("KING move sructure")
     Moves_Tuple += adjecent((move_to[0], move_to[1]))
 
-  #Hence; store new to respective holder
   if White_Playing:
-    White_moves += Moves_Tuple
-    White_moves = clean(move_from, White_moves)
-    Black_moves = clean(move_to, Black_moves)
+    White_moves += Moves_Tuple    
   else:
     Black_moves += Moves_Tuple
-    Black_moves = clean(move_from, Black_moves)
-    White_moves = clean(move_to, White_moves)
+  
 
   return board 
 
@@ -125,9 +130,9 @@ def legal(move_to, move_from, move_space):
   for i in range(len(move_space)):
     #print(move_to, move_space[i][0])
     if move_from == move_space[i][0]:
-      print("TEST - 1")
+      #print("TEST - 1")
       if move_to == move_space[i][1]:
-        print("TEST - 2")
+        #print("TEST - 2")
         return True
 
   return False
@@ -160,18 +165,17 @@ def pawn(create, White_Playing):
   temp = ''
 
   create_y -= 1
-  if (White_Playing) and (not blocked((create_x, create_y))): 
+  if (White_Playing) and not(blocked(create, create_x, create_y)): 
     temp = (create_x, create_y)  
 
-    #Add any additional conditions - Capture; enpassant 
+    #For black
   create_y += 2
-  if (not White_Playing) and (not blocked((create_x, create_y))):
-    create_y += 1
+  if (not White_Playing) and not(blocked(create, create_x, create_y)):
     temp = (create_x, create_y)   
     #Add any additional conditions - Caputre; enpassant 
 
   if temp != '':
-    temp = (create, tuple(temp))
+    temp = (create, tuple(temp)) #Need to sync for other player
     new.append(temp)
 
   print(new)
@@ -180,16 +184,41 @@ def pawn(create, White_Playing):
 
   #---- 
 
-def blocked(create):
+def blocked(create, move_from_x, move_from_y):
   create_x, create_y = create[0], create[1]
+  global Blocked_Tuple
 
-  if board[create_y][create_x] != Empty_:
-    print("YAY")
+  if board[move_from_y][move_from_x] != Empty_:    #need to check that a range check is applied 
+    print("YAY", board[create_y][create_x])    #will replace with an appropriate load 
+    temp = (move_from_x, move_from_y)
+    temp = (temp, tuple(create))
+    Blocked_Tuple.append(temp)
+    if board[move_from_y][move_from_x] in (W_Pawn, B_Pawn):
+      temp = (move_from_x, move_from_y)
+      temp = (tuple(create), temp)
+      #TO DO: remove move from moves tuple 
+      Blocked_Tuple.append(temp)    
+    print("Blocked:", Blocked_Tuple)
     return True 
   else:
     print("AWW")
     return False 
 
+
+  #---- 
+
+def generate():
+  global Blocked_Tuple
+  #check to locate item being moved/deleted 
+
+
+  #----
+
+def load(x_value, y_value, create, data_holder):
+  temp = (x_value, y_value)
+  temp = (create, tuple(temp))
+  data_holder.append(temp)
+  return data_holder
 
   #-----
 
@@ -203,30 +232,21 @@ def straight(create):
   new = []
 
   x_pointer = create_x
-  while x_pointer < 7 and (not(blocked((x_pointer + 1, create_y)))):
+  while x_pointer < 7 and not(blocked(create, x_pointer + 1, create_y)):
     x_pointer += 1
-    temp = (x_pointer, create_y)  
-    temp = (create, tuple(temp))
-    new.append(temp)
+    new += load(x_pointer, create_y, create, new)
   x_pointer = create_x
-  while x_pointer > 0 and (not(blocked((x_pointer - 1, create_y)))):
+  while x_pointer > 0 and not(blocked(create, x_pointer - 1, create_y)):
     x_pointer -= 1 
-    temp = (x_pointer, create_y)
-    temp = (create, tuple(temp))
-    new.append(temp)
-
+    new += load(x_pointer, create_y, create, new)
   y_pointer = create_y 
-  while y_pointer < 7 and (not(blocked((create_x, y_pointer + 1)))):
+  while y_pointer < 7 and not(blocked(create, create_x, y_pointer + 1)):
     y_pointer += 1
-    temp = (create_x, y_pointer)  
-    temp = (create, tuple(temp))
-    new.append(temp)
+    new += load(create_x, y_pointer, create, new)
   y_pointer = create_y
-  while y_pointer > 0 and (not(blocked((create_x, y_pointer - 1)))): 
+  while y_pointer > 0 and not(blocked(create, create_x, y_pointer - 1)): 
     y_pointer -= 1 
-    temp = (create_x, y_pointer)  
-    temp = (create, tuple(temp))
-    new.append(temp)
+    new += load(create_x, y_pointer, create, new)
 
   return new
 
@@ -239,36 +259,27 @@ def diagonal(create):
   create_x, create_y = create[0], create[1]
 
   x_pointer, y_pointer = create_x, create_y
-  while (x_pointer, y_pointer < 7) and (not(blocked((x_pointer + 1, y_pointer + 1)))): 
+  while (x_pointer, y_pointer < 7) and not blocked(create, x_pointer + 1, y_pointer + 1): 
     x_pointer += 1
     y_pointer += 1 
-    temp = (x_pointer, y_pointer)
-    temp = (create, tuple(temp))
-    new.append(temp)
+    new += load(x_pointer, y_pointer, create, new)
   x_pointer, y_pointer = create_x, create_y
-  while (x_pointer > 0 and y_pointer < 7) and (not(blocked))
+  while (x_pointer > 0 and y_pointer < 7) and not blocked(create, x_pointer - 1, y_pointer + 1):
     x_pointer -= 1
     y_pointer += 1 
-    temp = (x_pointer, y_pointer)
-    temp = (create, tuple(temp))
-    new.append(temp)
+    new += load(x_pointer, y_pointer, create, new)
   x_pointer, y_pointer = create_x, create_y
-  while (x_pointer < 7 and y_pointer > 0) and (not(blocked((x_pointer + 1, y_pointer - 1)))):
+  while (x_pointer < 7 and y_pointer > 0) and not blocked(create, x_pointer + 1, y_pointer - 1):
     x_pointer += 1
     y_pointer -= 1
-    temp = (x_pointer, y_pointer)
-    temp = (create, tuple(temp))
-    new.append(temp)
+    new += load(x_pointer, y_pointer, create, new)
   x_pointer, y_pointer = create_x, create_y 
-  while (x_pointer, y_pointer > 0) and (not(blocked((x_pointer - 1, y_pointer - 1)))):
+  while (x_pointer, y_pointer > 0) and not blocked(create, x_pointer - 1, y_pointer - 1):
     x_pointer -= 1
     y_pointer -= 1
-    temp = (x_pointer, y_pointer)
-    temp = (create, tuple(temp))
-    new.append(temp)
+    new += load(x_pointer, y_pointer, create, new)
 
   return new 
-
 
   #----
 
@@ -288,11 +299,11 @@ def knight(create):
   pivot.append((create_x + 1, create_y + 2))
   pivot.append((create_x - 1, create_y + 2))
   pivot.append((create_x + 1, create_y - 2))
-  pivot.append((create_x - 1, create_y + 2))
+  pivot.append((create_x - 1, create_y - 2))
 
-  for i in range(len(pivot)-1):
-    if pivot[i][0] < 8 and pivot[i][0] >= 0:
-      if pivot[i][1] < 8 and pivot[i][1] >= 0:
+  for i in range(len(pivot)-1):                    #Range check; will likely format into indep func
+    if pivot[i][0] <= 8 and pivot[i][0] >= 0:
+      if pivot[i][1] <= 8 and pivot[i][1] >= 0:
         temp = (create, tuple(pivot[i]))
         new.append(temp)
 
@@ -311,7 +322,7 @@ def adjecent(create):
   create_x, create_y = create[0], create[1]
 
   #hence, create tuple of new moves
-  pivot.append((create_x + 1, create_y + 1))
+  pivot.append((create_x + 1, create_y + 1))        #Will format into a bland tuple later 
   pivot.append((create_x, create_y + 1))
   pivot.append((create_x - 1, create_y + 1))
   pivot.append((create_x + 1, create_y))
@@ -320,7 +331,7 @@ def adjecent(create):
   pivot.append((create_x, create_y - 1))
   pivot.append((create_x - 1, create_y - 1))
 
-  for i in range(len(pivot)-1):
+  for i in range(len(pivot)-1):                        #Range check implemented later
     if pivot[i][0] < 8 and pivot[i][0] >= 0 :
       if pivot[i][1] < 8 and pivot[i][1] >= 0:
         temp = (create, tuple(pivot[i]))
@@ -361,9 +372,12 @@ board = [[B_Rook, B_Knig, B_Bish, B_Quee, B_King, B_Bish, B_Knig, B_Rook],
         [W_Rook, W_Knig, W_Bish, W_Quee, W_King, W_Bish, W_Knig, W_Rook]]
 
 Moves_Tuple = []
+Blocked_Tuple = []
 
 White_moves = Moves_Inital.White_moves
+Blocked_White_moves = Moves_Inital.Blocked_White_moves
 Black_moves = Moves_Inital.Black_moves
+Blocked_Black_moves = Moves_Inital.Blocked_Black_moves
 
 #2. ----------- Performing a move --------------------
 
@@ -385,6 +399,7 @@ while Playing:
   while not Valid:
     print("INNER LOOP")
     #Get inputs from users - using string literals to produce visual spacing
+    #print("DEBUG: Move-Tuple", Moves_Tuple)
     move_from = input(f"location to move from, (x,y) {space*10}")
     move_to = input(f"location to move to, (x,y) {space*12}")     
 
@@ -395,7 +410,7 @@ while Playing:
 
     #Perform exceptions; 
     Valid = legal(move_to, move_from, Moves_Tuple)
-    absurd(move_to, move_from)
+    #absurd(move_to, move_from)
 
 
   #Printing inputs
