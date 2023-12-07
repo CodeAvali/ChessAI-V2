@@ -8,6 +8,7 @@ global White_moves
 global Black_moves 
 global Moves_Tuple
 global Blocked_Tuple
+global Time_Stamp
 space = ' '
 
 # (3) ----------- Functions ------------------
@@ -197,7 +198,11 @@ def blocked(create, move_from_x, move_from_y):
       temp = (move_from_x, move_from_y)
       temp = (tuple(create), temp)
       #TO DO: remove pawn move from moves tuple - so that direct pawn captures are NOT possible 
-      Blocked_Tuple.append(temp)    
+      Blocked_Tuple.append(temp)
+
+      #need to grab Moves_Tuple for opposing plater 
+      delete(temp, Time_Stamp, True) 
+      
     #TO DO: Check for own peices - reasonably to enforce rules; esp for horses and so on 
     print("Blocked:", Blocked_Tuple)
     return True 
@@ -221,6 +226,26 @@ def load(x_value, y_value, create, data_holder):
   data_holder.append(temp)
   return data_holder
 
+  #----
+
+def delete(selection, timestamp, opposing):
+  #grab opposinng moves_tuple
+  global White_moves
+
+  temp_moves = []
+  
+  White_Playing, test = turn(timestamp)
+  print(White_Playing)
+  if (White_Playing is False) and (opposing is True):
+    for i in range(len(White_moves)-1):
+      print("running")
+      if White_moves[i] != selection:
+        temp_moves.append(White_moves[i])
+      else:
+        print("Pawn blocked")
+    print(White_moves)
+    White_moves = temp_moves
+        
   #-----
 
 def straight(create):
@@ -302,7 +327,7 @@ def knight(create):
   pivot.append((create_x + 1, create_y - 2))
   pivot.append((create_x - 1, create_y - 2))
 
-  for i in range(len(pivot)-1):                    #Range check; will likely format into indep function for consistency 
+  for i in range(len(pivot)-1):          #Range check; will likely format into indep function for consistency 
     if pivot[i][0] <= 8 and pivot[i][0] >= 0:
       if pivot[i][1] <= 8 and pivot[i][1] >= 0:
         temp = (create, tuple(pivot[i]))
