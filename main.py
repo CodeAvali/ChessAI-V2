@@ -216,6 +216,15 @@ def blocked(create, move_from_x, move_from_y):
 def generate():
   global Blocked_Tuple
   #check to locate item being moved/deleted 
+  condition = True 
+
+  for i in range(len(Blocked_Tuple)):
+    #Entry ticket
+    if condition:
+      raise NotImplementedError
+
+    if condition: 
+      raise NotImplementedError 
 
 
   #----
@@ -231,8 +240,10 @@ def load(x_value, y_value, create, data_holder):
 def delete(selection, timestamp, opposing):
   #grab opposinng moves_tuple
   global White_moves
+  global Black_moves
 
   temp_moves = []
+  print("Time to delete!")
   
   White_Playing, test = turn(timestamp)
   print(White_Playing)
@@ -243,8 +254,17 @@ def delete(selection, timestamp, opposing):
         temp_moves.append(White_moves[i])
       else:
         print("Pawn blocked")
-    print(White_moves)
     White_moves = temp_moves
+
+  if (White_Playing is True) and (opposing is True): 
+    for i in range(len(Black_moves)-1):
+      print("running for black")
+      if Black_moves[i] != selection:
+        temp_moves.append(Black_moves[i])
+      else:
+        print("Pawn blocked")
+    Black_moves = temp_moves
+    
         
   #-----
 
