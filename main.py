@@ -206,6 +206,10 @@ def blocked(create, move_from_x, move_from_y):
   global Blocked_Tuple
   print(move_from_x, move_from_y)
 
+  if move_from_x < 0 or move_from_x > 7 or move_from_y < 0 or move_from_y > 7:
+    return True  # Out of range
+
+
   if board[move_from_y][move_from_x] != Empty_:    #need to check that a range check is applied 
     print("YAY", board[create_y][create_x])    #will replace with an appropriate load 
     temp = (move_from_x, move_from_y)
@@ -239,8 +243,8 @@ def generate(move_from):
 
   for i in range(len(Blocked_Tuple)):
     #entry ticket
-    print("TEST:", Blocked_Tuple[i][0], move_from)
-    print("TEST2:", Blocked_Tuple[i][1], move_from)
+    #print("TEST:", Blocked_Tuple[i][0], move_from)
+    #print("TEST2:", Blocked_Tuple[i][1], move_from)
     if Blocked_Tuple[i][0] == move_from: 
       print("FIRE 1")
 
@@ -327,19 +331,19 @@ def straight(create):
   new = []
 
   x_pointer = create_x
-  while x_pointer < 7 and not(blocked(create, x_pointer, create_y)):
+  while x_pointer < 7 and not(blocked(create, x_pointer + 1, create_y)):
     x_pointer += 1
     new += load(x_pointer, create_y, create, new)
   x_pointer = create_x
-  while x_pointer > 0 and not(blocked(create, x_pointer, create_y)):
+  while x_pointer > 0 and not(blocked(create, x_pointer - 1, create_y)):
     x_pointer -= 1 
     new += load(x_pointer, create_y, create, new)
   y_pointer = create_y 
-  while y_pointer < 7 and not(blocked(create, create_x, y_pointer)):
+  while y_pointer < 7 and not(blocked(create, create_x, y_pointer + 1)):
     y_pointer += 1
     new += load(create_x, y_pointer, create, new)
   y_pointer = create_y
-  while y_pointer > 0 and not(blocked(create, create_x, y_pointer)): 
+  while y_pointer > 0 and not(blocked(create, create_x, y_pointer - 1)): 
     y_pointer -= 1 
     new += load(create_x, y_pointer, create, new)
 
@@ -448,7 +452,7 @@ W_Knig = '♞'
 B_Knig = '♘'
 W_Rook = '♜'
 B_Rook = '♖'
-W_Quee = '♛'
+W_Quee = '♛' #replace 
 B_Quee = '♕'
 W_King = '♛'  
 B_King = '♔'
