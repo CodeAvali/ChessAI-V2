@@ -81,7 +81,9 @@ def perform(move_to, move_from, board):
   #Performing moves
   #print("TEST:", move_to, move_from)
 
-  peice = board[(move_from[1])][(move_from[0])]  #Collect moving peice into temp variable 
+  print("testing", move_from)
+
+  peice = board[move_from[1]][move_from[0]]  #Collect moving peice into temp variable 
   board[(move_from[1])][(move_from[0])] = Empty_  #Remove moving peice
   board[(move_to[1])][(move_to[0])] = peice #Hence, write the peice into the location 
 
@@ -94,6 +96,26 @@ def perform(move_to, move_from, board):
     #White_moves = clean(move_to, White_moves)        #Perform generation func     
 
   #Check for peice to generate new moves
+
+  Moves_Tuple += property(move_to, peice, Moves_Tuple)
+
+  if White_Playing:
+    White_moves += Moves_Tuple    
+  else:
+    Black_moves += Moves_Tuple
+  
+  generate(move_from)
+
+  return board 
+
+  #----
+
+def property(move_to, peice, Moves_Tuple):
+  global White_moves
+  global Black_moves
+
+  print(peice)
+
   if peice in (W_Pawn, B_Pawn):
     print("PAWN move structure")
     Moves_Tuple += pawn((move_to[0], move_to[1]), White_Playing)
@@ -114,14 +136,8 @@ def perform(move_to, move_from, board):
     print("KING move sructure")
     Moves_Tuple += adjecent((move_to[0], move_to[1]))
 
-  if White_Playing:
-    White_moves += Moves_Tuple    
-  else:
-    Black_moves += Moves_Tuple
+  return Moves_Tuple
   
-
-  return board 
-
   #----
 
 def legal(move_to, move_from, move_space): 
@@ -188,6 +204,7 @@ def pawn(create, White_Playing):
 def blocked(create, move_from_x, move_from_y):
   create_x, create_y = create[0], create[1]
   global Blocked_Tuple
+  print(move_from_x, move_from_y)
 
   if board[move_from_y][move_from_x] != Empty_:    #need to check that a range check is applied 
     print("YAY", board[create_y][create_x])    #will replace with an appropriate load 
@@ -204,7 +221,6 @@ def blocked(create, move_from_x, move_from_y):
       delete(temp, Time_Stamp, True) 
       
     #TO DO: Check for own peices - reasonably to enforce rules; esp for horses and so on 
-    print("Blocked:", Blocked_Tuple)
     return True 
   else:
     print("AWW")
@@ -213,19 +229,52 @@ def blocked(create, move_from_x, move_from_y):
 
   #---- 
 
-def generate():
+def generate(move_from): 
+  global Blocked_Tuple
+  global White_moves
+  global Black_moves 
+  global KeyboardInterrupt
   global Blocked_Tuple
   #check to locate item being moved/deleted 
-  condition = True 
 
   for i in range(len(Blocked_Tuple)):
-    #Entry ticket
-    if condition:
-      raise NotImplementedError
+    #entry ticket
+    print("TEST:", Blocked_Tuple[i][0], move_from)
+    print("TEST2:", Blocked_Tuple[i][1], move_from)
+    if Blocked_Tuple[i][0] == move_from: 
+      print("FIRE 1")
 
-    if condition: 
-      raise NotImplementedError 
+      #release blocked moves 
 
+      moving_from = Blocked_Tuple[i][0]
+      moving_to = Blocked_Tuple[i][1]
+
+      peice = board[moving_from[1]][moving_from[0]]
+      if peice in WHITE:
+        print("yo crazy1")
+        White_moves += property(moving_from, peice, White_moves)   
+      elif peice in BLACK: 
+        print("yo crazy 2")
+        Black_moves += property(moving_from, peice, Black_moves)
+
+    if Blocked_Tuple[i][1] == move_from:
+      print("FIRE 2")
+
+      #release blocked moves
+
+      moving_from = Blocked_Tuple[i][0]
+      moving_to = Blocked_Tuple[i][1]
+
+      peice = board[moving_from[1]][moving_from[0]]
+      print(moving_from[1], move_from[0])
+      print("PEICE:", peice)
+      if peice in WHITE:
+        #TO DO: need to rewrite into property func 
+        print("yo crazy 3")
+        White_moves += property(moving_from, peice, White_moves)   
+      elif peice in BLACK: 
+        print("yo crazy 4")
+        Black_moves += property(moving_from, peice, Black_moves)  
 
   #----
 
@@ -278,19 +327,19 @@ def straight(create):
   new = []
 
   x_pointer = create_x
-  while x_pointer < 7 and not(blocked(create, x_pointer + 1, create_y)):
+  while x_pointer < 7 and not(blocked(create, x_pointer, create_y)):
     x_pointer += 1
     new += load(x_pointer, create_y, create, new)
   x_pointer = create_x
-  while x_pointer > 0 and not(blocked(create, x_pointer - 1, create_y)):
+  while x_pointer > 0 and not(blocked(create, x_pointer, create_y)):
     x_pointer -= 1 
     new += load(x_pointer, create_y, create, new)
   y_pointer = create_y 
-  while y_pointer < 7 and not(blocked(create, create_x, y_pointer + 1)):
+  while y_pointer < 7 and not(blocked(create, create_x, y_pointer)):
     y_pointer += 1
     new += load(create_x, y_pointer, create, new)
   y_pointer = create_y
-  while y_pointer > 0 and not(blocked(create, create_x, y_pointer - 1)): 
+  while y_pointer > 0 and not(blocked(create, create_x, y_pointer)): 
     y_pointer -= 1 
     new += load(create_x, y_pointer, create, new)
 
@@ -418,16 +467,15 @@ board = [[B_Rook, B_Knig, B_Bish, B_Quee, B_King, B_Bish, B_Knig, B_Rook],
         [W_Rook, W_Knig, W_Bish, W_Quee, W_King, W_Bish, W_Knig, W_Rook]]
 
 Moves_Tuple = []
-Blocked_Tuple = []
-
+Blocked_Tuple = Moves_Inital.Blocked_moves
 White_moves = Moves_Inital.White_moves
-Blocked_White_moves = Moves_Inital.Blocked_White_moves
 Black_moves = Moves_Inital.Black_moves
-Blocked_Black_moves = Moves_Inital.Blocked_Black_moves
+
 
 #2. ----------- Performing a move/MAIN GAMEPLAY LOOP --------------------
 
 Playing = True
+White_Playing = True 
 print(np.matrix(board))
 Time_Stamp = -1
 while Playing:
@@ -461,5 +509,7 @@ while Playing:
 
   #Printing inputs
   board = perform(move_to, move_from, board)
+  print("Blocked moves", Blocked_Tuple)
+  #print("White moves", White_moves)
 
   print(np.matrix(board))
