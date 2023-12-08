@@ -131,6 +131,7 @@ def property(move_to, peice, Moves_Tuple):
   #----
 
 def pawn(create, White_Playing):
+  global blocked_trait 
   #from inital, collect the x and y components 
 
   create_x, create_y = create[0], create[1]
@@ -143,7 +144,8 @@ def pawn(create, White_Playing):
   create_y -= 1
   #print(blocked(create, create_x, create_y))
   #print(board[create_y][create_x])
-  
+
+  blocked_trait = False
   if (White_Playing) and not(blocked(create, create_x, create_y)): 
     temp = (create_x, create_y)  
 
@@ -421,20 +423,12 @@ def explode(mapping):
       #print(White_moves)
     elif peice in BLACK:
       White_Playing = False
-      Black_moves = clean(mapping[i][0], Black_moves)
-      Black_moves = property(mapping[i][0], peice, Black_moves)
+      Black_moves = clean(mapping[i][1], Black_moves)
+      Black_moves = property(mapping[i][1], peice, Black_moves)
+
+  #Should do reasonablity checks here
 
   return White_moves, Black_moves
-    
-
-  
-    
-
-
-  
-
-
- 
   
   #====
 
@@ -533,8 +527,8 @@ while Playing:
   White_moves, Black_moves = explode(map)
 
   #print("Blocked moves", Blocked_Tuple)
-  print("White moves", White_moves)
-  print("Black moves", Black_moves)
+  #print("White moves", White_moves)
+  #print("Black moves", Black_moves)
 
   print(np.matrix(board))
 
