@@ -355,6 +355,7 @@ def diagonal(create):
 
   #Hence, create a tuple of new moves
   new = []
+  blocke
   create_x, create_y = create[0], create[1]
 
   x_pointer, y_pointer = create_x, create_y

@@ -142,8 +142,6 @@ def pawn(create, White_Playing):
   temp = ''
 
   create_y -= 1
-  #print(blocked(create, create_x, create_y))
-  #print(board[create_y][create_x])
 
   blocked_trait = False
   if (White_Playing) and not(blocked(create, create_x, create_y)): 
@@ -159,26 +157,42 @@ def pawn(create, White_Playing):
     temp = (create, tuple(temp)) #Need to sync for other player
     new.append(temp)
 
-  #Regenerate extra move if still on starting space
+  #Handle starting space 2 nove rule 
 
   temp = ''
 
   create_x, create_y = create[0], create[1]
 
-  if (White_Playing and create_y == 6) and not(blocked(create, create_x, create_y - 2)):
-    temp = (create, tuple(temp))
-    temp = (create_x, create_y - 2)
-  elif (not White_Playing) and (create_y == 2) and not(blocked(create, create_x, create_y - 2)):
-    temp = (create, tuple(temp))
-    temp = (create_x, create_y - 2)
+  if (White_Playing and create_y == 6) and not(blocked(create, create_x, 4)):
+    temp = (create_x, 4)
+  elif (not White_Playing) and (create_y == 1) and not(blocked(create, create_x, 3)):
+    temp = (create_x, 3)
 
   if temp != '':
     temp = (create, tuple(temp)) #Need to sync for other player
     new.append(temp)
 
-  #print(temp)
-  #print(new)
+  #Handle diagional captures
+  if (create_x - 1) >= 0:
+    if (White_Playing) and board[create_y - 1][create_x - 1] in BLACK: 
+      temp = (create_x - 1, create_y - 1)
+      temp = (create, tuple(temp))
+      new.append(temp)
+    elif not(White_Playing) and board[create_y + 1][create_x - 1] in WHITE:
+      temp = (create_x + 1, create_y + 1)
+      temp = (create, tuple(temp))
+      new.append(temp)
 
+  if (create_x + 1) < 8: 
+    if (White_Playing) and board[create_y - 1][create_x + 1] in BLACK:
+      temp = (create_x + 1, create_y - 1)
+      temp = (create, tuple(temp))
+      new.append(temp)
+    elif not(White_Playing) and board[create_y + 1][create_x + 1] in WHITE:
+      temp = (create_x + 1, create_y + 1)
+      temp = (create, tuple(temp))
+      new.append(temp)
+    
   return new
 
   #----
@@ -187,6 +201,7 @@ def straight(create, gen):
   #from inital, collect the x and y components
 
   create_x, create_y = create[0], create[1]
+  blocked_trait = True 
   #print("Straight movement")
 
   #Hence, create a tuple of new moves
@@ -231,12 +246,13 @@ def straight(create, gen):
   #----
 
 def diagonal(create, gen):
-  global blocked_holder
+  global blocked_trait
 
   #Hence, create a tuple of new moves
   new = []
   blocked_holder = []
   create_x, create_y = create[0], create[1]
+  Blocked_Trait = True 
   #print("Funny movement")
 
   x_pointer, y_pointer = create_x, create_y
@@ -271,6 +287,7 @@ def diagonal(create, gen):
   if gen:
     return Blocked_Tuple 
   else:
+    print("Generated moves, Diagonal", new)
     return new 
 
   #----
@@ -293,8 +310,8 @@ def knight(create):
   pivot.append((create_x - 1, create_y - 2))
 
   for i in range(len(pivot)-1):          #Range check; will likely format into indep function for consistency 
-    if pivot[i][0] <= 8 and pivot[i][0] >= 0:
-      if pivot[i][1] <= 8 and pivot[i][1] >= 0:
+    if pivot[i][0] < 8 and pivot[i][0] >= 0:
+      if pivot[i][1] < 8 and pivot[i][1] >= 0:
         temp = (create, tuple(pivot[i]))
         new.append(temp)
 
@@ -408,20 +425,24 @@ def generate(move_from, move_to):
   #Create a list of affected peices 
   global White_moves
   global Black_moves
+  global Blocked_Tuple 
   #From the location; get all peices that have been affected
   #print("generating!")
 
   locations = []
+  Blocked_Tuple = []
   print("Complexity inital", len(locations))
   Blocked_Tuple = []
-  locations = straight(move_from, True)
+  locations += straight(move_from, True)
   Blocked_Tuple = []
-  locations = diagonal(move_from, True)       
-  Blocked_Tuple = []        
-  locations = straight(move_to, True)
+  locations += diagonal(move_from, True)       
   Blocked_Tuple = []
-  locations = diagonal(move_to, True)
+  #extra func 
+  locations += straight(move_to, True)
   Blocked_Tuple = []
+  locations += diagonal(move_to, True)
+  Blocked_Tuple = []
+  #extra func 
 
   print("Complexity final", len(locations))
   locations = unique(locations)
@@ -438,12 +459,14 @@ def explode(mapping):
   global Black_moves
   global White_Playing 
   #Hence, after generating a map of affected peices
+  print("Exploding!")
 
   #print(mapping)
 
   for i in range(len(mapping)-1):
     peice = board[mapping[i][1][1]][mapping[i][1][0]]
     #print(peice)
+    Blocked_Trait = False
     if peice in WHITE:
       White_Playing = True
       #print("EXPLODE Complexity: ", len(White_moves))
@@ -459,7 +482,7 @@ def explode(mapping):
   #Should do reasonablity checks here
   White_moves = unique(White_moves)
   Black_moves = unique(Black_moves)
-
+  
   return White_moves, Black_moves
   
   #====
@@ -548,9 +571,9 @@ while Playing:
   # Asking the user for a move
   Valid = False
   map = []
-  print("OUTER LOOP")
+  #print("OUTER LOOP")
   while not Valid:
-    print("INNER LOOP")
+    #print("INNER LOOP")
     #Get inputs from users - using string literals to produce visual spacing
     #print("DEBUG: Move-Tuple", Moves_Tuple)
     move_from = input(f"location to move from, (x,y) {space*10}")
@@ -558,12 +581,14 @@ while Playing:
 
     #Process accordingly and normalise
     move_to, move_from = action(move_to, move_from)
-    belonging(move_from, Moves_Tuple)
+    print(move_to, move_from)
 
     #print("TEST", move_to, move_from)
 
     #Perform exceptions; 
     Valid = legal(move_to, move_from, Moves_Tuple)
+    if not Valid:
+      belonging(move_from, Moves_Tuple)
     #absurd(move_to, move_from)
 
 
@@ -571,6 +596,9 @@ while Playing:
   board = perform(move_to, move_from, board)
   map += generate(move_to, move_from)
   White_moves, Black_moves = explode(map)
+
+  White_moves = unique(White_moves)
+  Black_moves = unique(Black_moves)
 
   #print("Blocked moves", Blocked_Tuple)
   #print("White moves", White_moves)
