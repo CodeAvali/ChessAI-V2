@@ -159,6 +159,23 @@ def pawn(create, White_Playing):
     temp = (create, tuple(temp)) #Need to sync for other player
     new.append(temp)
 
+  #Regenerate extra move if still on starting space
+
+  temp = ''
+
+  create_x, create_y = create[0], create[1]
+
+  if (White_Playing and create_y == 6) and not(blocked(create, create_x, create_y - 2)):
+    temp = (create, tuple(temp))
+    temp = (create_x, create_y - 2)
+  elif (not White_Playing) and (create_y == 2) and not(blocked(create, create_x, create_y - 2)):
+    temp = (create, tuple(temp))
+    temp = (create_x, create_y - 2)
+
+  if temp != '':
+    temp = (create, tuple(temp)) #Need to sync for other player
+    new.append(temp)
+
   #print(temp)
   #print(new)
 
@@ -346,15 +363,19 @@ def belonging(move_from, Moves_Tuple):
 def clean(delete, moves_structure):
 
   kept = []
+  checked = []
 
   cleaned = tuple(delete)
   for i in range(len(moves_structure)):
     if moves_structure[i][0] != cleaned:
-      kept.append(moves_structure[i])
+      checked.append(moves_structure[i])
     #else:
-      #print(moves_structure[i][0], cleaned)
+      #print(moves_structure[i], cleaned)
 
-  return kept
+  #for i in range(len(checked)-1):
+    #f checked[i][]
+
+  return checked
 
   #----
 
@@ -377,8 +398,9 @@ def blocked(create, move_from_x, move_from_y):
       Blocked_Tuple = load(move_from_x, move_from_y, create, Blocked_Tuple)
       blocked_trait = False
       return False
-    else:
-      return True 
+  #otherwise
+  #print("Condition did not hold", create, move_from_x, move_from_y)
+  return True 
 
   #----
 
@@ -390,15 +412,20 @@ def generate(move_from, move_to):
   #print("generating!")
 
   locations = []
+  print("Complexity inital", len(locations))
   Blocked_Tuple = []
-  locations += straight(move_from, True)
+  locations = straight(move_from, True)
   Blocked_Tuple = []
-  locations += diagonal(move_from, True)       
+  locations = diagonal(move_from, True)       
   Blocked_Tuple = []        
-  locations += straight(move_to, True)
+  locations = straight(move_to, True)
   Blocked_Tuple = []
-  locations += diagonal(move_to, True)
+  locations = diagonal(move_to, True)
   Blocked_Tuple = []
+
+  print("Complexity final", len(locations))
+  locations = unique(locations)
+  print("Complexity after removing duplicates", len(locations))
 
   #Possibly create a unique func to clean 
 
@@ -409,7 +436,10 @@ def generate(move_from, move_to):
 def explode(mapping):
   global White_moves
   global Black_moves
+  global White_Playing 
   #Hence, after generating a map of affected peices
+
+  #print(mapping)
 
   for i in range(len(mapping)-1):
     peice = board[mapping[i][1][1]][mapping[i][1][0]]
@@ -427,6 +457,8 @@ def explode(mapping):
       Black_moves = property(mapping[i][1], peice, Black_moves)
 
   #Should do reasonablity checks here
+  White_moves = unique(White_moves)
+  Black_moves = unique(Black_moves)
 
   return White_moves, Black_moves
   
@@ -447,6 +479,20 @@ def mark(locations):
 def refresh():
   global blocked_trait 
   blocked_trait = True
+
+#----
+
+def unique(list1):
+  # intilize a null list
+  unique_list = []
+
+  # traverse for all elements
+  for x in list1:
+      # check if exists in unique_list or not
+      if x not in unique_list:
+          unique_list.append(x)
+
+  return unique_list
 
 # (1) ---------- Loaded values
 
@@ -492,7 +538,7 @@ print(np.matrix(board))
 Time_Stamp = - 1
 while Playing:
   #Pass the turn to the next player 
-  Time_Stamp += 1 
+  Time_Stamp += 1
   White_Playing, Moves_Tuple = turn(Time_Stamp)
 
   #TESTS:
@@ -533,8 +579,8 @@ while Playing:
   print(np.matrix(board))
 
   print("----- PERFORMANCE CHECKS ------")
-  print(len(White_moves))
-  print(len(Black_moves))
+  print("Complexity, white moves", len(White_moves))
+  print("Complexity, black moves", len(Black_moves))
 
   #alt = White_moves
   #mark(alt)
