@@ -79,14 +79,14 @@ def perform(move_to, move_from, board):
   #Hence; store new to respective holder
   if White_Playing:                       #TO DO Reverse order
     White_moves = clean(move_from, White_moves)
-    #Black_moves = clean(move_to, Black_moves)        #Perform generation func 
+    Black_moves = clean(move_to, Black_moves)        #Perform generation func 
   else:
     Black_moves = clean(move_from, Black_moves)
-    #White_moves = clean(move_to, White_moves)        #Perform generation func     
+    White_moves = clean(move_to, White_moves)        #Perform generation func     
 
   #Check for peice to generate new moves
 
-  Moves_Tuple += property(move_to, peice, Moves_Tuple)
+  #Moves_Tuple += property(move_to, peice, Moves_Tuple)
 
   if White_Playing:
     White_moves += Moves_Tuple    
@@ -143,13 +143,13 @@ def pawn(create, White_Playing):
 
   create_y -= 1
 
-  blocked_trait = False
-  if (White_Playing) and not(blocked(create, create_x, create_y)): 
+  blocked_trait = True
+  if (White_Playing) and board[create_x][create_y] not in PEICE:
     temp = (create_x, create_y)  
 
     #For black
   create_y += 2
-  if (not White_Playing) and not(blocked(create, create_x, create_y)):
+  if (not White_Playing) and board[create_y][create_x] not in PEICE:
     temp = (create_x, create_y)   
     #Add any additional conditions - Caputre; enpassant 
 
@@ -163,9 +163,11 @@ def pawn(create, White_Playing):
 
   create_x, create_y = create[0], create[1]
 
+  blocked_trait = False
   if (White_Playing and create_y == 6) and not(blocked(create, create_x, 4)):
     temp = (create_x, 4)
-  elif (not White_Playing) and (create_y == 1) and not(blocked(create, create_x, 3)):
+  refresh()
+  if (not White_Playing) and (create_y == 1) and not(blocked(create, create_x, 3)):
     temp = (create_x, 3)
 
   if temp != '':
@@ -198,6 +200,9 @@ def pawn(create, White_Playing):
   #----
 
 def straight(create, gen):
+  global Blocked_Tuple, Attack_Tuple
+  Blocked_Tuple = []
+  Attack_Tuple = []
   #from inital, collect the x and y components
 
   create_x, create_y = create[0], create[1]
@@ -208,6 +213,7 @@ def straight(create, gen):
 
   new = []
 
+  refresh()
   x_pointer = create_x
   while x_pointer < 7 and not(blocked(create, x_pointer + 1, create_y)):
     x_pointer += 1
@@ -241,22 +247,28 @@ def straight(create, gen):
   if gen:
     return Blocked_Tuple 
   else:
+    new += Attack_Tuple
     return new
 
   #----
 
 def diagonal(create, gen):
   global blocked_trait
+  global Blocked_Tuple
+  global Attack_Tuple
+  Blocked_Tuple = []
+  Attack_Tuple = []
 
   #Hence, create a tuple of new moves
   new = []
   blocked_holder = []
   create_x, create_y = create[0], create[1]
-  Blocked_Trait = True 
-  #print("Funny movement")
+  print("Diagional moves for", create_x, create_y)
 
+  refresh()
   x_pointer, y_pointer = create_x, create_y
   while (x_pointer < 7 and y_pointer < 7) and not blocked(create, x_pointer + 1, y_pointer + 1): 
+    #print(blocked_trait)
     x_pointer += 1
     y_pointer += 1 
     new = load(x_pointer, y_pointer, create, new)
@@ -264,6 +276,7 @@ def diagonal(create, gen):
   #new = load(x_pointer + 1, y_pointer + 1, create, new)
   x_pointer, y_pointer = create_x, create_y
   while (x_pointer > 0 and y_pointer < 7) and not blocked(create, x_pointer - 1, y_pointer + 1):
+    #print(blocked_trait)
     x_pointer -= 1
     y_pointer += 1 
     new = load(x_pointer, y_pointer, create, new)
@@ -271,6 +284,7 @@ def diagonal(create, gen):
   #new = 
   x_pointer, y_pointer = create_x, create_y
   while (x_pointer < 7 and y_pointer > 0) and not blocked(create, x_pointer + 1, y_pointer - 1):
+    #print(blocked_trait)
     x_pointer += 1
     y_pointer -= 1
     new = load(x_pointer, y_pointer, create, new)
@@ -278,6 +292,7 @@ def diagonal(create, gen):
   #new = load(x_pointer + 1, y_pointer - 1, create, new)
   x_pointer, y_pointer = create_x, create_y 
   while (x_pointer > 0 and y_pointer > 0) and not blocked(create, x_pointer - 1, y_pointer - 1):
+    #print(blocked_trait)
     x_pointer -= 1
     y_pointer -= 1
     new = load(x_pointer, y_pointer, create, new)
@@ -287,7 +302,7 @@ def diagonal(create, gen):
   if gen:
     return Blocked_Tuple 
   else:
-    print("Generated moves, Diagonal", new)
+    new += Attack_Tuple
     return new 
 
   #----
@@ -397,27 +412,32 @@ def clean(delete, moves_structure):
   #----
 
 def blocked(create, move_from_x, move_from_y):
-  global board
-  global blocked_trait 
   global Blocked_Tuple
+  global blocked_trait 
+  global Attack_Tuple 
 
-  if move_from_x < 0 or move_from_x > 7 or move_from_y < 0 or move_from_y > 7:
-    return True  # Out of range
+  if blocked_trait:
+    return True
 
+  if (move_from_x < 0 or move_from_x > 7) or (move_from_y < 0 or move_from_y > 7):
+    return True #Range check 
 
-  if board[move_from_y][move_from_x] not in PEICE:
-    #blocked_holder = load(move_from_x, move_from_y, create, blocked_holder)
-    #print(blocked_holder)
-    #print(board[move_from_y][move_from_x])
-    return False
-  else:
-    if blocked_trait:
-      Blocked_Tuple = load(move_from_x, move_from_y, create, Blocked_Tuple)
-      blocked_trait = False
+  starting = board[create[1]][create[0]]
+  destination = board[move_from_y][move_from_x]
+
+  if destination not in PEICE:
+    return False #location is empty; not blocked
+  elif not blocked_trait:
+    blocked_trait = True #location is taken; blocked
+    Blocked_Tuple = load(move_from_x, move_from_y, create, Blocked_Tuple) #store blocked move
+    if ((starting in WHITE) and (destination in BLACK)) or ((starting in BLACK) and (destination in WHITE)):
       return False
-  #otherwise
-  #print("Condition did not hold", create, move_from_x, move_from_y)
-  return True 
+      Attack_Tuple = load(move_from_x, move_from_y, create, Blocked_Tuple)
+    else:
+      return True 
+
+  #otherwise;
+  return True
 
   #----
 
@@ -428,6 +448,8 @@ def generate(move_from, move_to):
   global Blocked_Tuple 
   #From the location; get all peices that have been affected
   #print("generating!")
+
+  print(move_from, move_to)
 
   locations = []
   Blocked_Tuple = []
@@ -445,7 +467,7 @@ def generate(move_from, move_to):
   #extra func 
 
   print("Complexity final", len(locations))
-  locations = unique(locations)
+  #locations = unique(locations)
   print("Complexity after removing duplicates", len(locations))
 
   #Possibly create a unique func to clean 
@@ -459,24 +481,25 @@ def explode(mapping):
   global Black_moves
   global White_Playing 
   #Hence, after generating a map of affected peices
+  mark(mapping, board)
   print("Exploding!")
 
   #print(mapping)
 
-  for i in range(len(mapping)-1):
+  for i in range(len(mapping)):
     peice = board[mapping[i][1][1]][mapping[i][1][0]]
     #print(peice)
-    Blocked_Trait = False
+    Blocked_Trait = True
     if peice in WHITE:
       White_Playing = True
       #print("EXPLODE Complexity: ", len(White_moves))
-      White_moves = clean(mapping[i][1], White_moves)
+      White_moves = clean(mapping[i][0], White_moves)
       #print("EXPLODE Complexity: ", len(White_moves))
       White_moves = property(mapping[i][1], peice, White_moves)
       #print(White_moves)
     elif peice in BLACK:
       White_Playing = False
-      Black_moves = clean(mapping[i][1], Black_moves)
+      Black_moves = clean(mapping[i][0], Black_moves)
       Black_moves = property(mapping[i][1], peice, Black_moves)
 
   #Should do reasonablity checks here
@@ -487,21 +510,26 @@ def explode(mapping):
   
   #====
 
-def mark(locations):
-  global board 
-  for i in range(len(locations)-5):
-     try:
-       board[locations[i][1][1]][locations[i][1][0]] = "X"
-     except IndexError:
-       print(locations[i])
+def mark(locations, temp):
+  test = [['_','_','_','_','_','_','_','_'],
+          ['_','_','_','_','_','_','_','_'],
+          ['_','_','_','_','_','_','_','_'],
+          ['_','_','_','_','_','_','_','_'],
+          ['_','_','_','_','_','_','_','_'],
+          ['_','_','_','_','_','_','_','_'],
+          ['_','_','_','_','_','_','_','_'],
+          ['_','_','_','_','_','_','_','_']]
 
-  print(np.matrix(board))
+  for i in range(len(locations)):
+    test[locations[i][1][1]][locations[i][1][0]] = "X"
+
+  print(np.matrix(test))
 
 #----
 
 def refresh():
   global blocked_trait 
-  blocked_trait = True
+  blocked_trait = False
 
 #----
 
@@ -587,8 +615,7 @@ while Playing:
 
     #Perform exceptions; 
     Valid = legal(move_to, move_from, Moves_Tuple)
-    if not Valid:
-      belonging(move_from, Moves_Tuple)
+    belonging(move_from, Moves_Tuple)
     #absurd(move_to, move_from)
 
 
