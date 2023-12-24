@@ -102,6 +102,7 @@ def perform(move_to, move_from, board):
 # (3) --------- Movement properties -----------
 
 def property(move_to, peice, Moves_Tuple):
+  global White_Playing
   #MAIN: Calls forth movement properties; to return legal moves etc
 
   #print(peice)
@@ -132,6 +133,7 @@ def property(move_to, peice, Moves_Tuple):
 
 def pawn(create, White_Playing):
   global blocked_trait 
+  global board 
   #from inital, collect the x and y components 
 
   create_x, create_y = create[0], create[1]
@@ -141,21 +143,21 @@ def pawn(create, White_Playing):
   new = []
   temp = ''
 
-  create_y -= 1
-
-  blocked_trait = True
-  if (White_Playing) and board[create_x][create_y] not in PEICE:
-    temp = (create_x, create_y)  
+  if (White_Playing) and not(board[create_y - 1][create_x] in PEICE):
+    temp = (create_x, create_y - 1)  
+    #print("White generation", board[create_y - 1][create_x])
 
     #For black
-  create_y += 2
-  if (not White_Playing) and board[create_y][create_x] not in PEICE:
-    temp = (create_x, create_y)   
-    #Add any additional conditions - Caputre; enpassant 
+  if (not White_Playing) and not(board[create_y + 1][create_x] in PEICE):
+    temp = (create_x, create_y + 1)   
+    #print("Black generationm", board[create_y + 1][create_x])
+    #Add any additional conditions - Caputre; enpassant
 
   if temp != '':
     temp = (create, tuple(temp)) #Need to sync for other player
     new.append(temp)
+  #else:
+    #print("Failed; blocked", create_x, create_y)
 
   #Handle starting space 2 nove rule 
 
@@ -163,15 +165,18 @@ def pawn(create, White_Playing):
 
   create_x, create_y = create[0], create[1]
 
-  blocked_trait = False
-  if (White_Playing and create_y == 6) and not(blocked(create, create_x, 4)):
+  blocked_trait = True
+  if (White_Playing and create_y == 6) and (board[4][create_x] not in PEICE): 
+    #print(" Jump move", board[4][create_x], White_Playing)
     temp = (create_x, 4)
   refresh()
-  if (not White_Playing) and (create_y == 1) and not(blocked(create, create_x, 3)):
+  if (not White_Playing) and (create_y == 1) and (board[3][create_x] not in PEICE):
+    #print(" Jump move", board[3][create_x], White_Playing)
     temp = (create_x, 3)
 
   if temp != '':
     temp = (create, tuple(temp)) #Need to sync for other player
+    #print("Jump move generated", temp)
     new.append(temp)
 
   #Handle diagional captures
@@ -181,7 +186,7 @@ def pawn(create, White_Playing):
       temp = (create, tuple(temp))
       new.append(temp)
     elif not(White_Playing) and board[create_y + 1][create_x - 1] in WHITE:
-      temp = (create_x + 1, create_y + 1)
+      temp = (create_x - 1, create_y + 1)
       temp = (create, tuple(temp))
       new.append(temp)
 
@@ -263,7 +268,7 @@ def diagonal(create, gen):
   new = []
   blocked_holder = []
   create_x, create_y = create[0], create[1]
-  print("Diagional moves for", create_x, create_y)
+  #print("Diagional moves for", create_x, create_y)
 
   refresh()
   x_pointer, y_pointer = create_x, create_y
@@ -312,21 +317,21 @@ def knight(create):
   
   pivot = []
   new = []
-  create_x, create_y = create[0], create[1]
+  create_y, create_x = create[0], create[1]
 
   #hence, create tuple of new moves
-  pivot.append((create_x + 2, create_y + 1))       #Will format later to a bland tuple 
-  pivot.append((create_x - 2, create_y + 1))
-  pivot.append((create_x + 2, create_y - 1))
-  pivot.append((create_x - 2, create_y - 1))
-  pivot.append((create_x + 1, create_y + 2))
-  pivot.append((create_x - 1, create_y + 2))
-  pivot.append((create_x + 1, create_y - 2))
-  pivot.append((create_x - 1, create_y - 2))
+  pivot.append((create_y + 2, create_x + 1))       #Will format later to a bland tuple 
+  pivot.append((create_y + 2, create_x - 1))
+  pivot.append((create_y - 2, create_x + 1))
+  pivot.append((create_y - 2, create_x - 1))
+  pivot.append((create_y + 1, create_x + 2))
+  pivot.append((create_y + 1, create_x - 2))
+  pivot.append((create_y - 1, create_x + 2))
+  pivot.append((create_y - 1, create_x - 2))
 
-  for i in range(len(pivot)-1):          #Range check; will likely format into indep function for consistency 
-    if pivot[i][0] < 8 and pivot[i][0] >= 0:
-      if pivot[i][1] < 8 and pivot[i][1] >= 0:
+  for i in range(len(pivot)):         
+    if (pivot[i][0] < 8 and pivot[i][0] >= 0) and (pivot[i][1] < 8 and pivot[i][1] >= 0):
+      if not own(create, pivot[i]):
         temp = (create, tuple(pivot[i]))
         new.append(temp)
 
@@ -335,6 +340,20 @@ def knight(create):
   return new
 
   #----
+
+def own(move_from, move_to):
+  create_move = board[move_from[1]][move_from[0]]
+  create_location = board[move_to[1]][move_to[0]]
+
+  if (create_move in WHITE) and (create_location in WHITE):
+    return True
+  elif (create_move in BLACK) and (create_location in BLACK):
+    return True
+  else:
+    return False 
+    
+#----
+  
 
 def adjecent(create):
 
@@ -352,9 +371,9 @@ def adjecent(create):
   pivot.append((create_x, create_y - 1))
   pivot.append((create_x - 1, create_y - 1))
 
-  for i in range(len(pivot)-1):                        #Range check implemented later
-    if pivot[i][0] < 8 and pivot[i][0] >= 0 :
-      if pivot[i][1] < 8 and pivot[i][1] >= 0:
+  for i in range(len(pivot)):         
+    if (pivot[i][0] < 8 and pivot[i][0] >= 0) and (pivot[i][1] < 8 and pivot[i][1] >= 0):
+      if not own(create, pivot[i]):
         temp = (create, tuple(pivot[i]))
         new.append(temp)
 
@@ -364,18 +383,23 @@ def adjecent(create):
 
   #----
 
+def direct(create):
+  new = []
+  temp = (move_to, move_to)
+  new.append(temp)
+  return new
+
 # (4) --------- Legal moves; expansions and validation
 
 def legal(move_to, move_from, move_space): 
-  #INDEPENDENT HELPER: Validate that move is in moves_tuple
-
-  #print(move_space)
+  # Validate that move is in moves_tuple
 
   for i in range(len(move_space)):
     if move_from == move_space[i][0]:
       if move_to == move_space[i][1]:
-        return True
+        return True #is present in 
 
+  #otherwise;
   return False
 
   #----
@@ -431,10 +455,9 @@ def blocked(create, move_from_x, move_from_y):
     blocked_trait = True #location is taken; blocked
     Blocked_Tuple = load(move_from_x, move_from_y, create, Blocked_Tuple) #store blocked move
     if ((starting in WHITE) and (destination in BLACK)) or ((starting in BLACK) and (destination in WHITE)):
-      return False
+      #print("blocking", starting, destination)
       Attack_Tuple = load(move_from_x, move_from_y, create, Blocked_Tuple)
-    else:
-      return True 
+    return True
 
   #otherwise;
   return True
@@ -464,11 +487,12 @@ def generate(move_from, move_to):
   Blocked_Tuple = []
   locations += diagonal(move_to, True)
   Blocked_Tuple = []
-  #extra func 
+  locations += direct(move_to)
+  locations += direct(move_from)
 
-  print("Complexity final", len(locations))
+  #print("Complexity final", len(locations))
   #locations = unique(locations)
-  print("Complexity after removing duplicates", len(locations))
+  #print("Complexity after removing duplicates", len(locations))
 
   #Possibly create a unique func to clean 
 
@@ -481,8 +505,8 @@ def explode(mapping):
   global Black_moves
   global White_Playing 
   #Hence, after generating a map of affected peices
-  mark(mapping, board)
-  print("Exploding!")
+  #mark(mapping, board)
+  #print("Exploding!")
 
   #print(mapping)
 
@@ -493,13 +517,16 @@ def explode(mapping):
     if peice in WHITE:
       White_Playing = True
       #print("EXPLODE Complexity: ", len(White_moves))
-      White_moves = clean(mapping[i][0], White_moves)
+      White_moves = clean(mapping[i][1], White_moves)
+      #Black_moves = clean(mapping[i][0], Black_moves)    #testing 
       #print("EXPLODE Complexity: ", len(White_moves))
       White_moves = property(mapping[i][1], peice, White_moves)
+      #belonging(mapping[i][0], White_moves)
       #print(White_moves)
     elif peice in BLACK:
       White_Playing = False
-      Black_moves = clean(mapping[i][0], Black_moves)
+      Black_moves = clean(mapping[i][1], Black_moves)
+      #White_moves = clean(mapping[i][0], White_moves)  #testing
       Black_moves = property(mapping[i][1], peice, Black_moves)
 
   #Should do reasonablity checks here
@@ -511,17 +538,17 @@ def explode(mapping):
   #====
 
 def mark(locations, temp):
-  test = [['_','_','_','_','_','_','_','_'],
-          ['_','_','_','_','_','_','_','_'],
-          ['_','_','_','_','_','_','_','_'],
-          ['_','_','_','_','_','_','_','_'],
-          ['_','_','_','_','_','_','_','_'],
-          ['_','_','_','_','_','_','_','_'],
-          ['_','_','_','_','_','_','_','_'],
-          ['_','_','_','_','_','_','_','_']]
+  test = [[0,0,0,0,0,0,0,0],
+          [0,0,0,0,0,0,0,0],
+          [0,0,0,0,0,0,0,0],
+          [0,0,0,0,0,0,0,0],
+          [0,0,0,0,0,0,0,0],
+          [0,0,0,0,0,0,0,0],
+          [0,0,0,0,0,0,0,0],
+          [0,0,0,0,0,0,0,0]]
 
   for i in range(len(locations)):
-    test[locations[i][1][1]][locations[i][1][0]] = "X"
+    test[locations[i][1][1]][locations[i][1][0]] += 1
 
   print(np.matrix(test))
 
@@ -609,7 +636,7 @@ while Playing:
 
     #Process accordingly and normalise
     move_to, move_from = action(move_to, move_from)
-    print(move_to, move_from)
+    #print(move_to, move_from)
 
     #print("TEST", move_to, move_from)
 
@@ -622,6 +649,9 @@ while Playing:
   #Printing inputs
   board = perform(move_to, move_from, board)
   map += generate(move_to, move_from)
+  map = unique(map)
+
+  #print("mapping", map)
   White_moves, Black_moves = explode(map)
 
   White_moves = unique(White_moves)
