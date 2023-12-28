@@ -2,15 +2,8 @@
 
 import numpy as np
 import Moves_Inital
-global board 
-global White_Playing
-global White_moves
-global Black_moves 
-global Moves_Tuple
-global Blocked_Tuple
-global Time_Stamp
+global board, White_Playing, White_moves, Black_moves, Moves_Tuple, Blocked_Tuple, Time_Stamp
 space = ' '
-blocked_trait = False
 
 # (2) --------- Essential Functions ------------
 
@@ -61,17 +54,12 @@ def load(x_value, y_value, create, data_holder):
   #----
 
 def perform(move_to, move_from, board):
-  global White_moves
-  global Black_moves
+  global White_moves, Black_moves
   #Perform the required action - Clean and call forth explosion system
 
   Moves_Tuple = []
 
   #Performing moves
-  #print("TEST:", move_to, move_from)
-
-  #print("testing", move_from)
-
   peice = board[move_from[1]][move_from[0]]  #Collect moving peice into temp variable 
   board[(move_from[1])][(move_from[0])] = Empty_  #Remove moving peice
   board[(move_to[1])][(move_to[0])] = peice #Hence, write the peice into the location 
@@ -84,16 +72,10 @@ def perform(move_to, move_from, board):
     Black_moves = clean(move_from, Black_moves)
     White_moves = clean(move_to, White_moves)           
 
-  #Check for peice to generate new moves
-
-  #Moves_Tuple += property(move_to, peice, Moves_Tuple)
-
   if White_Playing:
     White_moves += Moves_Tuple    
   else:
     Black_moves += Moves_Tuple
-
-  #generate(move_from)
 
   return board 
 
@@ -105,26 +87,18 @@ def property(move_to, peice, Moves_Tuple):
   global White_Playing
   #MAIN: Calls forth movement properties; to return legal moves etc
 
-  #print(peice)
-
   if peice in (W_Pawn, B_Pawn):
-    #print("PAWN move structure")
     Moves_Tuple += pawn((move_to[0], move_to[1]), White_Playing)
   elif peice in (W_Knig, B_Knig):
-    #print("KNIGHT move structure")
     Moves_Tuple += knight((move_to[0], move_to[1]))
   elif peice in (W_Rook, B_Rook):
-    #print("ROOK move structure")
     Moves_Tuple += straight((move_to[0], move_to[1]), False)
   elif peice in (W_Bish, B_Bish):
-    #print("BISHOP move structure")
     Moves_Tuple += diagonal((move_to[0], move_to[1]), False)
   elif peice in (W_Quee, B_Quee):
-    #print("QUEEN move strucuture")
     Moves_Tuple += diagonal((move_to[0], move_to[1]), False)
     Moves_Tuple += straight((move_to[0], move_to[1]), False)
   elif peice in (W_King, B_King): 
-    #print("KING move sructure")
     Moves_Tuple += adjecent((move_to[0], move_to[1]))
 
   return Moves_Tuple
@@ -132,8 +106,7 @@ def property(move_to, peice, Moves_Tuple):
   #----
 
 def pawn(create, White_Playing):
-  global blocked_trait 
-  global board 
+  global blocked_trait, board
   #from inital, collect the x and y components 
 
   create_x, create_y = create[0], create[1]
@@ -145,7 +118,6 @@ def pawn(create, White_Playing):
 
   if (White_Playing) and not(board[create_y - 1][create_x] in PEICE):
     temp = (create_x, create_y - 1)  
-    #print("White generation", board[create_y - 1][create_x])
 
     #For black
   if (not White_Playing) and not(board[create_y + 1][create_x] in PEICE):
@@ -296,7 +268,7 @@ def knight(create):
 
   for i in range(len(pivot)):         
     if (pivot[i][0] < 8 and pivot[i][0] >= 0) and (pivot[i][1] < 8 and pivot[i][1] >= 0):  #Range check
-      if not own(create, pivot[i]):  #fr          
+      if not own(create, pivot[i]):  #ensure no friendly captures      
         #Then append to check  
         temp = (create, tuple(pivot[i]))
         new.append(temp)
@@ -397,13 +369,7 @@ def clean(delete, moves_structure):
   #----
 
 def blocked(create, move_from_x, move_from_y):
-  global Blocked_Tuple
-  global blocked_trait 
-  global Attack_Tuple 
-  global Protected_Tuple
-
-  #if blocked_trait:
-    #return True
+  global Blocked_Tuple, Attack_Tuple, Protected_Tuple
 
   if (move_from_x < 0 or move_from_x > 7) or (move_from_y < 0 or move_from_y > 7):
     return True #Range check 
@@ -429,13 +395,10 @@ def blocked(create, move_from_x, move_from_y):
 
 def generate(move_from, move_to):
   #Create a list of affected peices 
-  global White_moves
-  global Black_moves
-  global Blocked_Tuple 
+  global White_moves, Black_moves, Blocked_Tuple
   #From the location; get all peices that have been affected
-  #print("generating!")
 
-  print(move_from, move_to)
+  print(move_from, move_to)  #testing
 
   locations = []
   Blocked_Tuple = []
@@ -463,9 +426,7 @@ def generate(move_from, move_to):
   #----
 
 def explode(mapping):
-  global White_moves
-  global Black_moves
-  global White_Playing 
+  global White_moves, Black_moves, White_Playing
   #Hence, after generating a map of affected peices
 
   for i in range(len(mapping)):
