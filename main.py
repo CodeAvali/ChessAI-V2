@@ -116,19 +116,20 @@ def pawn(create, White_Playing):
   new = []
   temp = ''
 
+  #For white
   if (White_Playing) and not(board[create_y - 1][create_x] in PEICE):
     temp = (create_x, create_y - 1)  
 
-    #For black
+  #For black 
   if (not White_Playing) and not(board[create_y + 1][create_x] in PEICE):
     temp = (create_x, create_y + 1)   
-    #Add any additional conditions - Caputre; enpassant
+   
 
   if temp != '':
     temp = (create, tuple(temp)) #Need to sync for other player
     new.append(temp)
 
-  #Handle starting space 2 nove rule 
+  #Handle starting space 2 move rule 
 
   temp = ''
 
@@ -400,7 +401,7 @@ def blocked(create, move_from_x, move_from_y):
   starting = board[create[1]][create[0]]
   destination = board[move_from_y][move_from_x]
 
-  if destination == Empty_:
+  if (destination == Empty_) or (destination == En_Passant_Token):
     return False #location is empty; not blocked
 
   Blocked_Tuple = load(move_from_x, move_from_y, create, Blocked_Tuple)
@@ -546,6 +547,25 @@ def unique(duplicates):
 
   return unique_list
 
+#----
+
+def passant_check(move_from, move_to):
+  global board
+
+  en_flag = False
+
+  inital_y = move_from[1]
+  final_y = move_to[1]
+
+  if board[move_from[1]][move_from[0]] in PAWN:
+    if (inital_y == 1 and final_y == 3) or (inital_y == 6 and final_y == 4):
+      en_flag = True
+
+  print(en_flag)          
+
+  return en_flag 
+  
+
 # (1) ---------- Loaded values
 
 W_Pawn = "♟︎"
@@ -561,11 +581,13 @@ B_Quee = '♕'
 W_King = '♚'  
 B_King = '♔'
 Empty_ = '_'
+En_Passant_Token = '!'
 
-WHITE = [W_Pawn, W_Bish, W_Knig, W_Rook, W_Quee, W_King]
-BLACK = [B_Pawn, B_Bish, B_Knig, B_Rook, B_Quee, B_King]
+WHITE = [W_Pawn, W_Bish, W_Knig, W_Rook, W_Quee, W_King, En_Passant_Token]
+BLACK = [B_Pawn, B_Bish, B_Knig, B_Rook, B_Quee, B_King, En_Passant_Token]
 PEICE = [W_Pawn, W_Bish, W_Knig, W_Rook, W_Quee, W_King, B_Pawn, B_Bish, B_Knig, B_Rook, B_Quee, B_King]
 KNIGHT = [W_Knig, B_Knig]
+PAWN = [W_Pawn, B_Pawn]
 straight_optimised = [W_Knig, B_Knig, W_Bish, B_Bish, Empty_]
 diagonal_optimised = [W_Knig, B_Knig, W_Rook, B_Rook, Empty_]
 
@@ -615,6 +637,18 @@ while Playing:
     belonging(move_from, Moves_Tuple)
     #absurd(move_to, move_from)
 
+
+
+  #Check to see if the move is elegible for enpassant 
+  en_flag = passant_check(move_from, move_to)
+  if en_flag:
+    offset = int((move_from[1] - move_to[1]) / 2) + move_to[1]
+    print(offset, move_from[0])
+    board[offset][move_from[0]] = En_Passant_Token               #Create a token; 
+
+  #print(np.matrix(board))
+
+  
 
   #Printing inputs
   board = perform(move_to, move_from, board)
