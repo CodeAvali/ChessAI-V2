@@ -90,7 +90,7 @@ def property(move_to, peice, Moves_Tuple):
   if peice in (W_Pawn, B_Pawn):
     Moves_Tuple += pawn((move_to[0], move_to[1]), White_Playing)
   elif peice in (W_Knig, B_Knig):
-    Moves_Tuple += knight((move_to[0], move_to[1]))
+    Moves_Tuple += knight((move_to[0], move_to[1]), False)
   elif peice in (W_Rook, B_Rook):
     Moves_Tuple += straight((move_to[0], move_to[1]), False)
   elif peice in (W_Bish, B_Bish):
@@ -202,7 +202,15 @@ def straight(create, gen):
     new = load(create_x, y_pointer, create, new)
 
   if gen:
-    return Blocked_Tuple 
+    #Can cleanout bishop/knight peices for optimisation - CHECK TO SEE IF APPROVED 
+    new = []
+    for i in range(len(Blocked_Tuple)):
+      if board[Blocked_Tuple[i][1][1]][Blocked_Tuple[i][1][0]] not in straight_optimised:
+        temp = (move_from, tuple(Blocked_Tuple[i][1]))
+        new.append(temp)
+      #else: 
+        #print("straight movement redundancy check successful", board[Blocked_Tuple[i][1][1]][Blocked_Tuple[i][1][0]])
+    return new
   else:
     new += Attack_Tuple
     return new
@@ -242,18 +250,27 @@ def diagonal(create, gen):
     new = load(x_pointer, y_pointer, create, new)
 
   if gen:
-    return Blocked_Tuple 
+    #Can cleanout bishop/knight peices for optimisation - CHECK TO SEE IF APPROVED 
+    new = []
+    for i in range(len(Blocked_Tuple)):
+      if board[Blocked_Tuple[i][1][1]][Blocked_Tuple[i][1][0]] not in diagonal_optimised:
+        temp = (move_from, tuple(Blocked_Tuple[i][1]))
+        new.append(temp)
+      #else: 
+        #print("Diagonal movement redundancy check successful", board[Blocked_Tuple[i][1][1]][Blocked_Tuple[i][1][0]])
+    return new
   else:
     new += Attack_Tuple
     return new 
 
   #----
 
-def knight(create):
+def knight(create, gen):
   #Create move_tuple for horse actions
   
   pivot = []
   new = []
+  Blocked_Tuple = []
   create_y, create_x = create[0], create[1]
 
   #hence, create tuple of new moves
@@ -272,11 +289,16 @@ def knight(create):
         #Then append to check  
         temp = (create, tuple(pivot[i]))
         new.append(temp)
+      else:
+        temp = (create, tuple(pivot[i]))
+        Blocked_Tuple.append(temp)
+        
 
-  #print(new)
-
-  return new
-
+  if not gen:
+    return new
+  else: 
+    return Blocked_Tuple 
+    
   #----
 
 def own(move_from, move_to):
@@ -325,6 +347,7 @@ def direct(create):
   new = []
   temp = (move_to, move_to)
   new.append(temp)
+  #print("returned from direct", new)
   return new
 
 # (4) --------- Legal moves; expansions and validation
@@ -378,10 +401,8 @@ def blocked(create, move_from_x, move_from_y):
   destination = board[move_from_y][move_from_x]
 
   if destination == Empty_:
-    blocked_trait = False 
     return False #location is empty; not blocked
 
-  #blocked_trait = True
   Blocked_Tuple = load(move_from_x, move_from_y, create, Blocked_Tuple)
   if own(create, (move_from_x, move_from_y)):
     Protected_Tuple = load(move_from_x, move_from_y, create, Protected_Tuple)
@@ -404,24 +425,61 @@ def generate(move_from, move_to):
   Blocked_Tuple = []
 
   #for moving_from
-  Blocked_Tuple = []
   locations += straight(move_from, True)
-  Blocked_Tuple = []
   locations += diagonal(move_from, True)       
-  Blocked_Tuple = []
+  
   #for moving_to
   locations += straight(move_to, True)
-  Blocked_Tuple = []
   locations += diagonal(move_to, True)
 
   #for direct locations 
-  Blocked_Tuple = []
-  locations += direct(move_to)
-  locations += direct(move_from)
-
-  #Possibly create a unique func to clean 
+  #locations += direct(move_to)
+  #locations += direct(move_from)
+  locations += blind(move_from, move_to)
 
   return locations 
+
+  #----
+
+def blind(move_from, move_to):
+  global board, KNIGHT
+
+  pivot = []
+  new = []
+
+  create_y, create_x = move_from[0], move_from[1]
+  pivot.append((create_y + 2, create_x + 1))       #Will format later to a bland tuple 
+  pivot.append((create_y + 2, create_x - 1))
+  pivot.append((create_y - 2, create_x + 1))
+  pivot.append((create_y - 2, create_x - 1))
+  pivot.append((create_y + 1, create_x + 2))
+  pivot.append((create_y + 1, create_x - 2))
+  pivot.append((create_y - 1, create_x + 2))
+  pivot.append((create_y - 1, create_x - 2))
+
+  create_y, create_x = move_to[0], move_to[1]
+  pivot.append((create_y + 2, create_x + 1))       #Will format later to a bland tuple 
+  pivot.append((create_y + 2, create_x - 1))
+  pivot.append((create_y - 2, create_x + 1))
+  pivot.append((create_y - 2, create_x - 1))
+  pivot.append((create_y + 1, create_x + 2))  #Could realistically just handle this better. 
+  pivot.append((create_y + 1, create_x - 2))
+  pivot.append((create_y - 1, create_x + 2))
+  pivot.append((create_y - 1, create_x - 2))
+
+
+  for i in range(len(pivot)):         
+    if (pivot[i][0] < 8 and pivot[i][0] >= 0) and (pivot[i][1] < 8 and pivot[i][1] >= 0):  #Range check
+      #print(pivot[i], board[pivot[i][1]][pivot[i][0]])
+      if board[pivot[i][1]][pivot[i][0]] in KNIGHT:
+        temp = (move_from, tuple(pivot[i]))
+        new.append(temp)
+
+  #print("generated from blind", new)
+
+  return new 
+
+  #Need to make more efficent - Refactor incoming!
 
   #----
 
@@ -429,9 +487,9 @@ def explode(mapping):
   global White_moves, Black_moves, White_Playing
   #Hence, after generating a map of affected peices
 
+  #print("complexity explosion", len(mapping))
   for i in range(len(mapping)):
     peice = board[mapping[i][1][1]][mapping[i][1][0]]
-    Blocked_Trait = True
     if peice in WHITE:
       White_Playing = True
       White_moves = clean(mapping[i][1], White_moves)
@@ -441,15 +499,15 @@ def explode(mapping):
       Black_moves = clean(mapping[i][1], Black_moves)
       Black_moves = property(mapping[i][1], peice, Black_moves)
 
-  #Should do reasonablity checks here
-  White_moves = unique(White_moves)
-  Black_moves = unique(Black_moves)
-  
+  #Then, return new legal moves. 
   return White_moves, Black_moves
+
+  #White_moves = unique(White_moves)      #testing for duplicates
+  #Black_moves = unique(Black_moves)
   
   #====
 
-def mark(locations, temp):
+def mark(locations):
   test = [[0,0,0,0,0,0,0,0],
           [0,0,0,0,0,0,0,0],
           [0,0,0,0,0,0,0,0],
@@ -472,15 +530,19 @@ def refresh():
 
 #----
 
-def unique(list1):
+def unique(duplicates):
+
   # intilize a null list
   unique_list = []
+  print("TESTING", len(duplicates))
 
   # traverse for all elements
-  for x in list1:
+  for i in duplicates:
       # check if exists in unique_list or not
-      if x not in unique_list:
-          unique_list.append(x)
+      if i not in unique_list:
+          unique_list.append(i)
+
+  print("TESTING", len(unique_list))
 
   return unique_list
 
@@ -503,6 +565,10 @@ Empty_ = '_'
 WHITE = [W_Pawn, W_Bish, W_Knig, W_Rook, W_Quee, W_King]
 BLACK = [B_Pawn, B_Bish, B_Knig, B_Rook, B_Quee, B_King]
 PEICE = [W_Pawn, W_Bish, W_Knig, W_Rook, W_Quee, W_King, B_Pawn, B_Bish, B_Knig, B_Rook, B_Quee, B_King]
+KNIGHT = [W_Knig, B_Knig]
+straight_optimised = [W_Knig, B_Knig, W_Bish, B_Bish, Empty_]
+diagonal_optimised = [W_Knig, B_Knig, W_Rook, B_Rook, Empty_]
+
 
 board = [[B_Rook, B_Knig, B_Bish, B_Quee, B_King, B_Bish, B_Knig, B_Rook],
         [B_Pawn, B_Pawn, B_Pawn, B_Pawn, B_Pawn, B_Pawn, B_Pawn, B_Pawn],
@@ -553,12 +619,19 @@ while Playing:
   #Printing inputs
   board = perform(move_to, move_from, board)
   map += generate(move_to, move_from)
-  map = unique(map)
+
+  #mark(map)
+  #print(len(map))
+  #map = unique(map)
+  #print(len(map))
+  #mark(map)
+
+  #mark(map)
 
   White_moves, Black_moves = explode(map)
 
-  White_moves = unique(White_moves)
-  Black_moves = unique(Black_moves)
+  #White_moves = unique(White_moves)
+  #Black_moves = unique(Black_moves)
 
   print(np.matrix(board))
 
