@@ -100,6 +100,22 @@ def get(move_to, move_from):
 
   #then need to generate new moves from location;
 
+
+  #----
+
+def promotion(move_to, move_from):
+  global board, White_moves, Black_moves
+
+  #assuming pawn peice has allready been checked
+  print("promotion value", move_to[1])
+
+  if move_to[1] == 0:   #Then, white pawn promotion
+    board[1][move_from[0]] = W_Quee
+  elif move_to[1] == 7:
+    board[6][move_from[0]] = B_Quee   
+
+  #Will implement peice choice later - just assuming queen for completeness. 
+
 # (3) --------- Movement properties -----------
 
 def property(move_to, peice, Moves_Tuple):
@@ -144,14 +160,13 @@ def pawn(create, White_Playing):
 
   create_x, create_y = create[0], create[1]
 
-  blocked_trait = True
   if (White_Playing and create_y == 6) and (board[4][create_x] not in PEICE): 
     new = load(create_x, 4, create, new)
   if (not White_Playing) and (create_y == 1) and (board[3][create_x] not in PEICE):
     new = load(create_x, 3, create, new)
 
   #Handle diagional captures
-  if (create_x - 1) >= 0:
+  if (create_x - 1) >= 0:  #Index check 
     if (White_Playing) and board[create_y - 1][create_x - 1] in BLACK: 
       new = load(create_x - 1, create_y - 1, create, new)
     elif not(White_Playing) and board[create_y + 1][create_x - 1] in WHITE:
@@ -654,6 +669,8 @@ while Playing:
   #Check to see if the move is elegible for enpassant 
   if board[move_from[1]][move_from[0]] in PAWN:
     en_location = passant_check(move_from, move_to, en_location)
+    #Likewise, if pawn check for promotion
+    promotion(move_to, move_from)
 
   #print(np.matrix(board))
 
