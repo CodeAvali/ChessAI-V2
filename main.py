@@ -62,6 +62,7 @@ def perform(move_to, move_from, board):
   #Performing moves
   peice = board[move_from[1]][move_from[0]]  #Collect moving peice into temp variable 
   board[(move_from[1])][(move_from[0])] = Empty_  #Remove moving peice
+  get(move_to, move_from)
   board[(move_to[1])][(move_to[0])] = peice #Hence, write the peice into the location 
 
   #Hence; store new to respective holder
@@ -80,6 +81,26 @@ def perform(move_to, move_from, board):
   return board 
 
   #----
+
+def get(move_to, move_from):
+  global board, White_moves, Black_moves
+
+  captured = board[move_to[1]][move_to[0]] #get captured peice
+  capturing = board[move_from[1]][move_from[0]]
+
+  print("got", captured, "by", capturing)
+
+  if captured == W_En_Passant_Token:
+    if capturing == B_Pawn:
+      board[4][move_to[0]] = Empty_
+      White_moves = clean((move_to[0], 4), White_moves)
+  elif captured == B_En_Passant_Token:
+    if capturing == W_Pawn:
+      board[3][move_to[0]] = Empty_
+      Black_moves = clean((move_to[0], 3), Black_moves)
+
+
+  #then need to generate new moves from location;
 
 # (3) --------- Movement properties -----------
 
@@ -401,7 +422,7 @@ def blocked(create, move_from_x, move_from_y):
   starting = board[create[1]][create[0]]
   destination = board[move_from_y][move_from_x]
 
-  if (destination == Empty_) or (destination == En_Passant_Token):
+  if (destination in EMPTY):
     return False #location is empty; not blocked
 
   Blocked_Tuple = load(move_from_x, move_from_y, create, Blocked_Tuple)
@@ -549,7 +570,7 @@ def unique(duplicates):
 
 #----
 
-def passant_check(move_from, move_to):
+def passant_check(move_from, move_to, en_location):
   global board
 
   en_flag = False
@@ -558,14 +579,30 @@ def passant_check(move_from, move_to):
   final_y = move_to[1]
 
   if board[move_from[1]][move_from[0]] in PAWN:
-    if (inital_y == 1 and final_y == 3) or (inital_y == 6 and final_y == 4):
-      en_flag = True
+    if (inital_y == 1 and final_y == 3) or (inital_y == 6 and final_y == 4):  #eligible for en_passant
+      if (move_from[0] - 1) >= 0:   #Do a range check 
+        if board[final_y][move_from[0] - 1] in PAWN:
+          en_flag = True
+      if (move_from[0] + 1) <= 7:
+        if board[final_y][move_from[0] + 1] in PAWN:
+          en_flag = True
 
-  print(en_flag)          
+  #print(en_flag)      
 
-  return en_flag 
+  if en_flag:
+    offset = int((move_from[1] - move_to[1]) / 2) + move_to[1]
+    print(offset, move_from[0])
+    if White_Playing:
+      board[offset][move_from[0]] = W_En_Passant_Token     
+      en_location[0][0] = offset
+      en_location[0][1] = move_from[0]
+    else:
+      board[offset][move_from[0]] = B_En_Passant_Token
+      en_location[1][0] = offset
+      en_location[1][1] = move_from[0]
+
+  return en_location
   
-
 # (1) ---------- Loaded values
 
 W_Pawn = "♟︎"
@@ -581,13 +618,15 @@ B_Quee = '♕'
 W_King = '♚'  
 B_King = '♔'
 Empty_ = '_'
-En_Passant_Token = '!'
+W_En_Passant_Token = '!'
+B_En_Passant_Token = '?'
 
-WHITE = [W_Pawn, W_Bish, W_Knig, W_Rook, W_Quee, W_King, En_Passant_Token]
-BLACK = [B_Pawn, B_Bish, B_Knig, B_Rook, B_Quee, B_King, En_Passant_Token]
+WHITE = [W_Pawn, W_Bish, W_Knig, W_Rook, W_Quee, W_King, W_En_Passant_Token]
+BLACK = [B_Pawn, B_Bish, B_Knig, B_Rook, B_Quee, B_King, B_En_Passant_Token]
 PEICE = [W_Pawn, W_Bish, W_Knig, W_Rook, W_Quee, W_King, B_Pawn, B_Bish, B_Knig, B_Rook, B_Quee, B_King]
 KNIGHT = [W_Knig, B_Knig]
 PAWN = [W_Pawn, B_Pawn]
+EMPTY = [Empty_, W_En_Passant_Token, B_En_Passant_Token]
 straight_optimised = [W_Knig, B_Knig, W_Bish, B_Bish, Empty_]
 diagonal_optimised = [W_Knig, B_Knig, W_Rook, B_Rook, Empty_]
 
@@ -607,6 +646,8 @@ Attack_Tuple = []
 Protected_Tuple = []
 White_moves = Moves_Inital.White_moves
 Black_moves = Moves_Inital.Black_moves
+en_location = [[-1, -1], [-1, -1]]    #first index array is used for White; 2nd index array is used for Black 
+en_flag = -1
 
 # (5) --------- Main gameplay loop
 
@@ -637,22 +678,25 @@ while Playing:
     belonging(move_from, Moves_Tuple)
     #absurd(move_to, move_from)
 
-
-
   #Check to see if the move is elegible for enpassant 
-  en_flag = passant_check(move_from, move_to)
-  if en_flag:
-    offset = int((move_from[1] - move_to[1]) / 2) + move_to[1]
-    print(offset, move_from[0])
-    board[offset][move_from[0]] = En_Passant_Token               #Create a token; 
+  if board[move_from[1]][move_from[0]] in PAWN:
+    print("running")
+    en_location = passant_check(move_from, move_to, en_location)
 
   #print(np.matrix(board))
-
-  
 
   #Printing inputs
   board = perform(move_to, move_from, board)
   map += generate(move_to, move_from)
+
+  print("en_location", en_location)
+  print(board[en_location[1][0]][en_location[1][1]])
+  print(board[en_location[0][0]][en_location[0][1]])
+  #Need to delete en_passant token if it exists for the opposite player
+  if (White_Playing) and board[en_location[1][0]][en_location[1][1]] == B_En_Passant_Token:
+    board[en_location[1][0]][en_location[1][1]] = Empty_
+  if (not White_Playing) and board[en_location[0][0]][en_location[0][1]] == W_En_Passant_Token:
+    board[en_location[0][0]][en_location[0][1]] = Empty_
 
   #mark(map)
   #print(len(map))
