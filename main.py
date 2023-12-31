@@ -43,8 +43,7 @@ def action(move_to, move_from):
   #----
 
 def load(x_value, y_value, create, data_holder):
-  global White_moves
-  global Black_moves
+  global White_moves, Black_moves
   #INDEPENDENT: Shorthand for creating an action when needed
 
   temp = (x_value, y_value)
@@ -190,7 +189,6 @@ def straight(create, gen):
   #from inital, collect the x and y components
 
   create_x, create_y = create[0], create[1]
-  blocked_trait = True 
 
   #Hence, create a tuple of new moves
 
@@ -281,7 +279,14 @@ def knight(create, gen):
   #Create move_tuple for horse actions
 
   create_y, create_x = create[0], create[1]
-  pivot = [(create_y + 2, create_x + 1), (create_y + 2, create_x - 1), (create_y - 2, create_x + 1), (create_y - 2, create_x - 1), (create_y + 1, create_x + 2), (create_y + 1, create_x - 2), (create_y - 1, create_x + 2), (create_y - 1, create_x - 2)]
+  pivot = [(create_y + 2, create_x + 1),
+           (create_y + 2, create_x - 1),
+           (create_y - 2, create_x + 1),
+           (create_y - 2, create_x - 1),
+           (create_y + 1, create_x + 2),
+           (create_y + 1, create_x - 2),
+           (create_y - 1, create_x + 2),
+           (create_y - 1, create_x - 2)]
   
   new = []
   Blocked_Tuple = []
@@ -321,7 +326,15 @@ def adjecent(create):
   create_x, create_y = create[0], create[1]
 
   #Autocreate pivot 
-  pivot = [(create_x + 1, create_y + 1), (create_x, create_y + 1), (create_x - 1, create_y + 1), (create_x + 1, create_y), (create_x - 1, create_y), (create_x + 1, create_y - 1), (create_x, create_y - 1), (create_x - 1, create_y - 1)]
+  pivot = [(create_x + 1, create_y + 1), 
+           (create_x    , create_y + 1),
+           (create_x - 1, create_y + 1), 
+           (create_x + 1, create_y    ), 
+           (create_x - 1, create_y    ), 
+           (create_x + 1, create_y - 1), 
+           (create_x, create_y - 1    ), 
+           (create_x - 1, create_y - 1)]
+  
   new = []
 
   for i in range(len(pivot)):         
