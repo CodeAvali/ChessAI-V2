@@ -1,4 +1,5 @@
-#Live document for current work - Code Avali - Chessbot NEA
+#Main.py - Chess AI educational demonstration
+#This is the shell of the chess AI program; which GUI.py calls from. 
 
 import numpy as np
 import Moves_Inital
@@ -107,11 +108,10 @@ def promotion(move_to, move_from):
   global board, White_moves, Black_moves
 
   #assuming pawn peice has allready been checked
-  print("promotion value", move_to[1])
 
   if move_to[1] == 0:   #Then, white pawn promotion
     board[1][move_from[0]] = W_Quee
-  elif move_to[1] == 7:
+  elif move_to[1] == 7:  #Black, pawn promotion 
     board[6][move_from[0]] = B_Quee   
 
   #Will implement peice choice later - just assuming queen for completeness. 
@@ -279,33 +279,22 @@ def diagonal(create, gen):
 
 def knight(create, gen):
   #Create move_tuple for horse actions
+
+  create_y, create_x = create[0], create[1]
+  pivot = [(create_y + 2, create_x + 1), (create_y + 2, create_x - 1), (create_y - 2, create_x + 1), (create_y - 2, create_x - 1), (create_y + 1, create_x + 2), (create_y + 1, create_x - 2), (create_y - 1, create_x + 2), (create_y - 1, create_x - 2)]
   
-  pivot = []
   new = []
   Blocked_Tuple = []
-  create_y, create_x = create[0], create[1]
-
-  #hence, create tuple of new moves
-  pivot.append((create_y + 2, create_x + 1))       #Will format later to a bland tuple 
-  pivot.append((create_y + 2, create_x - 1))
-  pivot.append((create_y - 2, create_x + 1))
-  pivot.append((create_y - 2, create_x - 1))
-  pivot.append((create_y + 1, create_x + 2))
-  pivot.append((create_y + 1, create_x - 2))
-  pivot.append((create_y - 1, create_x + 2))
-  pivot.append((create_y - 1, create_x - 2))
 
   for i in range(len(pivot)):         
     if (pivot[i][0] < 8 and pivot[i][0] >= 0) and (pivot[i][1] < 8 and pivot[i][1] >= 0):  #Range check
-      if not own(create, pivot[i]):  #ensure no friendly captures      
-        #Then append to check  
-        temp = (create, tuple(pivot[i]))
-        new.append(temp)
-      else:
-        temp = (create, tuple(pivot[i]))
-        Blocked_Tuple.append(temp)
+      if not gen:
+        if not own(create, pivot[i]):  #ensure no friendly captures      
+          new = load(pivot[i][0], pivot[i][1], create, new)
+      elif gen:
+        if board[pivot[i][1]][pivot[i][0]] in KNIGHT:
+          Blocked_Tuple = load(pivot[i][0], pivot[i][1], create, Blocked_Tuple)  #Handle edge case for moves
         
-
   if not gen:
     return new
   else: 
@@ -329,27 +318,16 @@ def own(move_from, move_to):
 
 def adjecent(create):
 
-  pivot = []
-  new = []
   create_x, create_y = create[0], create[1]
 
-  #hence, create tuple of new moves
-  pivot.append((create_x + 1, create_y + 1))        #Will format into a bland tuple later 
-  pivot.append((create_x    , create_y + 1))
-  pivot.append((create_x - 1, create_y + 1))
-  pivot.append((create_x + 1, create_y))
-  pivot.append((create_x - 1, create_y))
-  pivot.append((create_x + 1, create_y - 1))
-  pivot.append((create_x, create_y - 1))
-  pivot.append((create_x - 1, create_y - 1))
+  #Autocreate pivot 
+  pivot = [(create_x + 1, create_y + 1), (create_x, create_y + 1), (create_x - 1, create_y + 1), (create_x + 1, create_y), (create_x - 1, create_y), (create_x + 1, create_y - 1), (create_x, create_y - 1), (create_x - 1, create_y - 1)]
+  new = []
 
   for i in range(len(pivot)):         
     if (pivot[i][0] < 8 and pivot[i][0] >= 0) and (pivot[i][1] < 8 and pivot[i][1] >= 0):
-      if not own(create, pivot[i]):
-        temp = (create, tuple(pivot[i]))
-        new.append(temp)
-
-  #print(new)
+      if not own(create, pivot[i]):  #Check for friendly peices
+        new = load(pivot[i][0], pivot[i][1], create, new)
 
   return new
 
@@ -359,7 +337,6 @@ def direct(create):
   new = []
   temp = (move_to, move_to)
   new.append(temp)
-  #print("returned from direct", new)
   return new
 
 # (4) --------- Legal moves; expansions and validation
@@ -424,8 +401,6 @@ def blocked(create, move_from_x, move_from_y):
     
   #----
 
-  #----
-
 def generate(move_from, move_to):
   #Create a list of affected peices 
   global White_moves, Black_moves, Blocked_Tuple
@@ -444,54 +419,11 @@ def generate(move_from, move_to):
   locations += straight(move_to, True)
   locations += diagonal(move_to, True)
 
-  #for direct locations 
-  #locations += direct(move_to)
-  #locations += direct(move_from)
-  locations += blind(move_from, move_to)
+  #for handling knight edge case
+  locations += knight(move_from, True)
+  locations += knight(move_to, True)
 
   return locations 
-
-  #----
-
-def blind(move_from, move_to):
-  global board, KNIGHT
-
-  pivot = []
-  new = []
-
-  create_y, create_x = move_from[0], move_from[1]
-  pivot.append((create_y + 2, create_x + 1))       #Will format later to a bland tuple 
-  pivot.append((create_y + 2, create_x - 1))
-  pivot.append((create_y - 2, create_x + 1))
-  pivot.append((create_y - 2, create_x - 1))
-  pivot.append((create_y + 1, create_x + 2))
-  pivot.append((create_y + 1, create_x - 2))
-  pivot.append((create_y - 1, create_x + 2))
-  pivot.append((create_y - 1, create_x - 2))
-
-  create_y, create_x = move_to[0], move_to[1]
-  pivot.append((create_y + 2, create_x + 1))       #Will format later to a bland tuple 
-  pivot.append((create_y + 2, create_x - 1))
-  pivot.append((create_y - 2, create_x + 1))
-  pivot.append((create_y - 2, create_x - 1))
-  pivot.append((create_y + 1, create_x + 2))  #Could realistically just handle this better. 
-  pivot.append((create_y + 1, create_x - 2))
-  pivot.append((create_y - 1, create_x + 2))
-  pivot.append((create_y - 1, create_x - 2))
-
-
-  for i in range(len(pivot)):         
-    if (pivot[i][0] < 8 and pivot[i][0] >= 0) and (pivot[i][1] < 8 and pivot[i][1] >= 0):  #Range check
-      #print(pivot[i], board[pivot[i][1]][pivot[i][0]])
-      if board[pivot[i][1]][pivot[i][0]] in KNIGHT:
-        temp = (move_from, tuple(pivot[i]))
-        new.append(temp)
-
-  #print("generated from blind", new)
-
-  return new 
-
-  #Need to make more efficent - Refactor incoming!
 
   #----
 
@@ -672,25 +604,17 @@ while Playing:
     #Likewise, if pawn check for promotion
     promotion(move_to, move_from)
 
-  #print(np.matrix(board))
-
   #Printing inputs
   board = perform(move_to, move_from, board)
   map += generate(move_to, move_from)
 
-  #print("en_location", en_location)
-  #print(board[en_location[1][0]][en_location[1][1]])
-  #print(board[en_location[0][0]][en_location[0][1]])
-  #Need to delete en_passant token if it exists for the opposite player
   if (White_Playing) and board[en_location[1][0]][en_location[1][1]] == B_En_Passant_Token:
     board[en_location[1][0]][en_location[1][1]] = Empty_
   if (not White_Playing) and board[en_location[0][0]][en_location[0][1]] == W_En_Passant_Token:
     board[en_location[0][0]][en_location[0][1]] = Empty_
 
   #mark(map)
-  #print(len(map))
   #map = unique(map)
-  #print(len(map))
   #mark(map)
 
   #mark(map)
