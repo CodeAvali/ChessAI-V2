@@ -43,13 +43,53 @@ def action(move_to, move_from):
   #----
 
 def load(x_value, y_value, create, data_holder):
-  global White_moves, Black_moves
+  global White_moves, Black_moves, White_Playing, flag_map
   #INDEPENDENT: Shorthand for creating an action when needed
 
   temp = (x_value, y_value)
   temp = (create, tuple(temp))
   data_holder.append(temp)
+
+  #For flagging system; add value as required       #Adaptive flagging system - needs to be refactored in to save O(2n)- legal moves
+  #if flagging:
+    #if White_Playing:
+      #data = flag_map[y_value][x_value]
+      #data = (int(data[0]) + 1, data[1])
+      #flag_map[y_value][x_value] = data
+    #else: 
+      #data = flag_map[y_value][x_value] 
+      #data = (data[0], int(data[1]) + 1)
+      #flag_map[y_value][x_value] = data
   return data_holder
+
+#----
+
+def flag_the_map(White_moves, Black_moves):
+
+  flag_map = [[(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],                #Basic flagging - likely inefficent. 
+             [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],
+             [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],
+             [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],
+             [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],
+             [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],
+             [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],
+             [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)]]
+
+  for i in range(len(White_moves)):
+    x_value = White_moves[i][1][0]
+    y_value = White_moves[i][1][1]
+    data = flag_map[y_value][x_value]
+    data = (int(data[0]) + 1, data[1])
+    flag_map[y_value][x_value] = data
+
+  for j in range(len(Black_moves)):
+    x_value = Black_moves[j][1][0]
+    y_value = Black_moves[j][1][1]
+    data = flag_map[y_value][x_value]
+    data = (data[0], int(data[1]) + 1)
+    flag_map[y_value][x_value] = data
+
+  return flag_map
 
   #----
 
@@ -324,8 +364,6 @@ def own(move_from, move_to):
 def adjecent(create):
 
   create_x, create_y = create[0], create[1]
-
-  #Autocreate pivot 
   pivot = [(create_x + 1, create_y + 1), 
            (create_x    , create_y + 1),
            (create_x - 1, create_y + 1), 
@@ -381,14 +419,29 @@ def belonging(move_from, Moves_Tuple):
 
 def clean(delete, moves_structure):
 
-  kept = []
   checked = []
 
   cleaned = tuple(delete)
+  print("CLEANED CALLED")
   for i in range(len(moves_structure)):
     if (moves_structure[i][0] != cleaned):
+      print(cleaned, moves_structure[i][0])
       checked.append(moves_structure[i])
+    
+    #else:                                        #Adaptive flagging attempt - need to refactor later! to be more efficent rather than a 
 
+     # x_value = moves_structure[i][1][1]
+     # y_value = moves_structure[i][1][0]
+      #print(board[y_value][x_value])
+      #if White_Playing:
+        #data = flag_map[x_value][y_value]
+        #data = (int(data[0]) - 1, data[1])
+        #flag_map[x_value][y_value] = data
+      #else:
+        #data = flag_map[x_value][y_value]
+        #data = (data[0], int(data[1]) - 1)
+        #flag_map[x_value][y_value] = data
+  
   return checked
 
   #----
@@ -535,6 +588,13 @@ def passant_check(move_from, move_to, en_location):
       en_location[1][1] = move_from[0]
 
   return en_location  #point to token location 
+
+  #----
+
+def flag_map_check(flag_map):
+  print("Flag map - print error check")
+  for i in range(len(flag_map)):
+    print(flag_map[i])
   
 # (1) ---------- Loaded values
 
@@ -573,6 +633,9 @@ board = [[B_Rook, B_Knig, B_Bish, B_Quee, B_King, B_Bish, B_Knig, B_Rook],
         [W_Pawn, W_Pawn, W_Pawn, W_Pawn, W_Pawn, W_Pawn, W_Pawn, W_Pawn], 
         [W_Rook, W_Knig, W_Bish, W_Quee, W_King, W_Bish, W_Knig, W_Rook]]
 
+flag_map = Moves_Inital.flag_map
+flag_map_check(flag_map)
+
 Moves_Tuple = []
 Blocked_Tuple = []
 Attack_Tuple = []
@@ -592,6 +655,7 @@ while Playing:
   #Pass the turn to the next player 
   Time_Stamp += 1
   White_Playing, Moves_Tuple = turn(Time_Stamp)
+  
 
   # Asking the user for a move
   Valid = False
@@ -638,8 +702,10 @@ while Playing:
   #Black_moves = unique(Black_moves)
 
   print(np.matrix(board))
+  flag_map = flag_the_map(White_moves, Black_moves)
+  flag_map_check(flag_map)
 
-  print("----- PERFORMANCE CHECKS ------")
+  print("----- PERFORMANCE CHECKS ------")            #Remove after stage 1
   print("Complexity, white moves", len(White_moves))
   print("Complexity, black moves", len(Black_moves))
 
