@@ -67,8 +67,8 @@ def load(x_value, y_value, create, data_holder):
 def flag_the_map(White_moves, Black_moves):
 
   flag_map = [[(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],                #Basic flagging - likely inefficent. 
-             [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],
-             [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],
+             [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],                 #Leads to inconsitences as has to be applied end of turn 
+             [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],                 #NEEDS TO BE ADAPTIVE. AAAAAAAAAAAAA
              [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],
              [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],
              [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],
@@ -377,7 +377,7 @@ def adjecent(create):
 
   for i in range(len(pivot)):         
     if (pivot[i][0] < 8 and pivot[i][0] >= 0) and (pivot[i][1] < 8 and pivot[i][1] >= 0):
-      if not own(create, pivot[i]):  #Check for friendly peices
+      if not own(create, pivot[i]) and not attacked(pivot[i]):  #Check for friendly peices
         new = load(pivot[i][0], pivot[i][1], create, new)
 
   return new
@@ -389,6 +389,20 @@ def direct(create):
   temp = (move_to, move_to)
   new.append(temp)
   return new
+
+  #----
+
+def attacked(create):
+  global flag_map, White_Playing 
+
+  pointer = 1
+  if not White_Playing: 
+    pointer = 0
+
+  if flag_map[create[1]][create[0]][pointer] >= 1:
+    return True
+  else: 
+    return False
 
 # (4) --------- Legal moves; expansions and validation
 
@@ -422,10 +436,8 @@ def clean(delete, moves_structure):
   checked = []
 
   cleaned = tuple(delete)
-  print("CLEANED CALLED")
   for i in range(len(moves_structure)):
     if (moves_structure[i][0] != cleaned):
-      print(cleaned, moves_structure[i][0])
       checked.append(moves_structure[i])
     
     #else:                                        #Adaptive flagging attempt - need to refactor later! to be more efficent rather than a 
@@ -488,6 +500,17 @@ def generate(move_from, move_to):
   #for handling knight edge case
   locations += knight(move_from, True)
   locations += knight(move_to, True)
+
+  #Otherwise; ensure that the opponents king is included
+  print(King_location)
+  if White_Playing:
+    locations = load(King_location[1][0], King_location[1][1], King_location[0], locations)
+    print("WhitePlaying")
+  else:
+    locations += load(King_location[0][0], King_location[0][1], King_location[1], locations)
+    print("BlackPlaying")
+
+  print(locations)
 
   return locations 
 
@@ -620,6 +643,7 @@ PEICE = [W_Pawn, W_Bish, W_Knig, W_Rook, W_Quee, W_King, B_Pawn, B_Bish, B_Knig,
 KNIGHT = [W_Knig, B_Knig]
 PAWN = [W_Pawn, B_Pawn]
 EMPTY = [Empty_, W_En_Passant_Token, B_En_Passant_Token]
+KING = [W_King, B_King]
 straight_optimised = [W_Knig, B_Knig, W_Bish, B_Bish, Empty_]
 diagonal_optimised = [W_Knig, B_Knig, W_Rook, B_Rook, Empty_]
 
@@ -644,6 +668,7 @@ White_moves = Moves_Inital.White_moves
 Black_moves = Moves_Inital.Black_moves
 en_location = [[-1, -1], [-1, -1]]    #first index array is used for White; 2nd index array is used for Black 
 en_flag = -1
+King_location = [[7, 4], [0, 4]]
 
 # (5) --------- Main gameplay loop
 
@@ -690,9 +715,22 @@ while Playing:
   if (not White_Playing) and board[en_location[0][0]][en_location[0][1]] == W_En_Passant_Token:
     board[en_location[0][0]][en_location[0][1]] = Empty_
 
+  #print(move_from[0], move_from[1], King_location)
+  print("DIRECT", move_from, board[move_to[1]][move_to[0]])
+  if board[move_to[1]][move_to[0]] in KING: 
+    print("CHANGED")
+    if White_Playing:
+      King_location[0][0] = move_to[0]
+      King_location[0][1] = move_to[1]
+    else:
+      King_location[1][0] = move_to[0]
+      King_location[1][1] = move_to[1]
+  print(move_from[0], move_from[1], King_location)
+
+  
   #mark(map)
-  #map = unique(map)
-  #mark(map)
+  map = unique(map)
+  mark(map)
 
   #mark(map)
 
