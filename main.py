@@ -380,6 +380,10 @@ def adjecent(create):
       if not own(create, pivot[i]) and not attacked(pivot[i]):  #Check for friendly peices
         new = load(pivot[i][0], pivot[i][1], create, new)
 
+
+  if (new == []) and attacked(create):
+    in_check()
+    
   return new
 
   #----
@@ -395,8 +399,10 @@ def direct(create):
 def attacked(create):
   global flag_map, White_Playing 
 
+  peice = board[create[1]][create[0]]
+
   pointer = 1
-  if not White_Playing: 
+  if peice in BLACK:
     pointer = 0
 
   if flag_map[create[1]][create[0]][pointer] >= 1:
@@ -618,6 +624,21 @@ def flag_map_check(flag_map):
   print("Flag map - print error check")
   for i in range(len(flag_map)):
     print(flag_map[i])
+
+
+  #----
+
+def in_check():
+  global Checked, Playing
+
+  #Need to check if actually attacked
+
+  print("---------------------------", Checked)
+  if Checked:
+    Playing = False
+  else:
+    Checked = True 
+    print("------------------------- THREATENED")
   
 # (1) ---------- Loaded values
 
@@ -644,8 +665,8 @@ KNIGHT = [W_Knig, B_Knig]
 PAWN = [W_Pawn, B_Pawn]
 EMPTY = [Empty_, W_En_Passant_Token, B_En_Passant_Token]
 KING = [W_King, B_King]
-straight_optimised = [W_Knig, B_Knig, W_Bish, B_Bish, Empty_]
-diagonal_optimised = [W_Knig, B_Knig, W_Rook, B_Rook, Empty_]
+straight_optimised = [W_Knig, B_Knig, W_Bish, B_Bish, Empty_, W_King, B_King]
+diagonal_optimised = [W_Knig, B_Knig, W_Rook, B_Rook, Empty_, W_King, B_King]
 
 
 board = [[B_Rook, B_Knig, B_Bish, B_Quee, B_King, B_Bish, B_Knig, B_Rook],
@@ -669,6 +690,7 @@ Black_moves = Moves_Inital.Black_moves
 en_location = [[-1, -1], [-1, -1]]    #first index array is used for White; 2nd index array is used for Black 
 en_flag = -1
 King_location = [[7, 4], [0, 4]]
+Checked = False
 
 # (5) --------- Main gameplay loop
 
@@ -707,6 +729,7 @@ while Playing:
     promotion(move_to, move_from)
 
   #Printing inputs
+  
   board = perform(move_to, move_from, board)
   map += generate(move_to, move_from)
 
@@ -715,19 +738,8 @@ while Playing:
   if (not White_Playing) and board[en_location[0][0]][en_location[0][1]] == W_En_Passant_Token:
     board[en_location[0][0]][en_location[0][1]] = Empty_
 
-  #print(move_from[0], move_from[1], King_location)
-  print("DIRECT", move_from, board[move_to[1]][move_to[0]])
-  if board[move_to[1]][move_to[0]] in KING: 
-    print("CHANGED")
-    if White_Playing:
-      King_location[0][0] = move_to[0]
-      King_location[0][1] = move_to[1]
-    else:
-      King_location[1][0] = move_to[0]
-      King_location[1][1] = move_to[1]
-  print(move_from[0], move_from[1], King_location)
+  #print(move_from[0], move_from[1], King_location
 
-  
   #mark(map)
   map = unique(map)
   mark(map)
@@ -736,14 +748,54 @@ while Playing:
 
   White_moves, Black_moves = explode(map)
 
+  print("DIRECT", move_from, board[move_to[1]][move_to[0]])
+  if board[move_to[1]][move_to[0]] in KING: 
+    print("CHANGED")
+    if White_Playing:
+      King_location[0][1] = move_to[0]
+      King_location[0][0] = move_to[1]
+    else:
+      King_location[1][1] = move_to[0]
+      King_location[1][0] = move_to[1]
+  print(move_from[0], move_from[1], King_location)
+
+  flag_map = flag_the_map(White_moves, Black_moves)
+
+  map = []
+  #if White_Playing:
+  map = load(King_location[1][1], King_location[1][0], King_location[1], map)
+    #print("WhitePlaying")
+  #if not White_Playing:
+  map = load(King_location[0][1], King_location[0][0], King_location[0], map)
+    #print("BlackPlaying")
+
+  print("Additional", map, White_Playing)
+  mark(map)
+  White_moves, Black_moves = explode(map)
+
   #White_moves = unique(White_moves)
   #Black_moves = unique(Black_moves)
 
   print(np.matrix(board))
-  flag_map = flag_the_map(White_moves, Black_moves)
   flag_map_check(flag_map)
 
   print("----- PERFORMANCE CHECKS ------")            #Remove after stage 1
   print("Complexity, white moves", len(White_moves))
   print("Complexity, black moves", len(Black_moves))
 
+
+
+print("!!!!!!!!!!!!!!!!!! GAME EXITED !!!!!!!!!!!!!!!!!!!!!!")
+
+if White_Playing:
+  print(" ----------- White won by Checkmate ------------")
+else:
+  print(" ----------- Black won by Checkmate ------------")
+
+
+
+
+#TO DO - NEED TO REFACTOR CHECKMATE SO THAT ONLY VALID MOVES CAN BE MADE - INSTEAD OF AN AFTER APPROACH
+#Either - check attack values on related peices
+#Or - ensure that no attack on diagional path (?) 
+#LOT TO DO 
