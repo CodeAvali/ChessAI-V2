@@ -3,8 +3,11 @@
 
 import numpy as np
 import Moves_Inital
+import copy
+import lazyai as lazy
 global board, White_Playing, White_moves, Black_moves, Moves_Tuple, Blocked_Tuple, Time_Stamp
 space = ' '
+message = 'By checkmate'
 
 # (2) --------- Essential Functions ------------
 
@@ -100,7 +103,7 @@ def perform(move_to, move_from, board):
   Moves_Tuple = []
 
   #Performing moves
-  get(move_to, move_from)
+  score = get(move_to, move_from)
   peice = board[move_from[1]][move_from[0]]  #Collect moving peice into temp variable 
   board[(move_from[1])][(move_from[0])] = Empty_  #Remove moving peice
   board[(move_to[1])][(move_to[0])] = peice #Hence, write the peice into the location 
@@ -118,12 +121,12 @@ def perform(move_to, move_from, board):
   else:
     Black_moves += Moves_Tuple
 
-  return board 
+  return board
 
   #----
 
 def get(move_to, move_from):
-  global board, White_moves, Black_moves
+  global board, White_moves, Black_moves, Playing, message 
 
   captured = board[move_to[1]][move_to[0]] #get captured peice
   capturing = board[move_from[1]][move_from[0]]
@@ -136,6 +139,12 @@ def get(move_to, move_from):
     if capturing == W_Pawn:
       board[3][move_to[0]] = Empty_
       Black_moves = clean((move_to[0], 3), Black_moves)
+
+  elif (captured == W_King) or (captured == B_King): 
+    Playing = False 
+    message = 'Lazy King Capture! ----'
+
+#-----
 
 
   #then need to generate new moves from location;
@@ -190,10 +199,12 @@ def pawn(create, White_Playing):
   new = []
 
   #Directly forward moves; only 1 square
-  if (White_Playing) and (board[create_y - 1][create_x] not in PEICE):
-    new = load(create_x, create_y - 1, create, new)
-  elif (not White_Playing) and (board[create_y + 1][create_x] not in PEICE):
-    new = load(create_x, create_y + 1, create, new)
+  if create_y - 1 >= 0:
+    if (White_Playing) and (board[create_y - 1][create_x] not in PEICE):
+      new = load(create_x, create_y - 1, create, new)
+  if create_y + 1 <= 7:
+    if (not White_Playing) and (board[create_y + 1][create_x] not in PEICE):
+       new = load(create_x, create_y + 1, create, new)
 
   #Handle starting space 2 move rule 
 
@@ -205,19 +216,23 @@ def pawn(create, White_Playing):
     new = load(create_x, 3, create, new)
 
   #Handle diagional captures
-  if (create_x - 1) >= 0:  #Index check 
-    if (White_Playing) and board[create_y - 1][create_x - 1] in BLACK: 
-      new = load(create_x - 1, create_y - 1, create, new)
-    elif not(White_Playing) and board[create_y + 1][create_x - 1] in WHITE:
-      new = load(create_x - 1, create_y + 1, create, new)
+  if ((create_x - 1) >= 0):  #Index check 
+    if (create_y - 1) >= 0:
+      if (White_Playing) and board[create_y - 1][create_x - 1] in BLACK: 
+        new = load(create_x - 1, create_y - 1, create, new)
+    if (create_y + 1) <= 7:
+      if not(White_Playing) and board[create_y + 1][create_x - 1] in WHITE:
+        new = load(create_x - 1, create_y + 1, create, new)
 
   if (create_x + 1) < 8: 
-    if (White_Playing) and board[create_y - 1][create_x + 1] in BLACK:
-      new = load(create_x + 1, create_y - 1, create, new)
-    elif not(White_Playing) and board[create_y + 1][create_x + 1] in WHITE:
-      new = load(create_x + 1, create_y + 1, create, new)
+    if (create_y - 1) >= 0:
+      if (White_Playing) and board[create_y - 1][create_x + 1] in BLACK:
+        new = load(create_x + 1, create_y - 1, create, new)
+    if (create_y + 1) <= 7:
+      if not(White_Playing) and board[create_y + 1][create_x + 1] in WHITE:
+        new = load(create_x + 1, create_y + 1, create, new)
     
-  return new
+  return new  
 
   #----
 
@@ -382,7 +397,7 @@ def adjecent(create):
 
 
   if (new == []) and attacked(create):
-    in_check()
+    in_check(create)
     
   return new
 
@@ -399,13 +414,15 @@ def direct(create):
 def attacked(create):
   global flag_map, White_Playing 
 
+  
   peice = board[create[1]][create[0]]
 
-  pointer = 1
-  if peice in BLACK:
-    pointer = 0
+  pointer = 0
+  if White_Playing:
+    pointer = 1
 
   if flag_map[create[1]][create[0]][pointer] >= 1:
+    print(create, "is attacked", flag_map[create[1]][create[0]][pointer], pointer)
     return True
   else: 
     return False
@@ -490,7 +507,7 @@ def generate(move_from, move_to):
   global White_moves, Black_moves, Blocked_Tuple
   #From the location; get all peices that have been affected
 
-  print(move_from, move_to)  #testing
+  #print(move_from, move_to)  #testing
 
   locations = []
   Blocked_Tuple = []
@@ -508,15 +525,15 @@ def generate(move_from, move_to):
   locations += knight(move_to, True)
 
   #Otherwise; ensure that the opponents king is included
-  print(King_location)
+  #print(King_location)
   if White_Playing:
     locations = load(King_location[1][0], King_location[1][1], King_location[0], locations)
-    print("WhitePlaying")
+    #print("WhitePlaying")
   else:
     locations += load(King_location[0][0], King_location[0][1], King_location[1], locations)
-    print("BlackPlaying")
+    #print("BlackPlaying")
 
-  print(locations)
+  #print(locations)
 
   return locations 
 
@@ -628,17 +645,27 @@ def flag_map_check(flag_map):
 
   #----
 
-def in_check():
-  global Checked, Playing
+def in_check(create):
+  global Checked, Playing, White_Playing
 
   #Need to check if actually attacked
 
   print("---------------------------", Checked)
+  
+  peice = board[create[1]][create[0]]
+  print(peice)
+
+  pointer = 0
+  if White_Playing:
+    pointer = 1
+
   if Checked:
     Playing = False
-  else:
-    Checked = True 
-    print("------------------------- THREATENED")
+  if flag_map[create[1]][create[0]][pointer] >= 2:
+    Playing = False
+  if flag_map[create[1]][create[0]][pointer] == 1:
+    Checked = True
+  
   
 # (1) ---------- Loaded values
 
@@ -691,6 +718,189 @@ en_location = [[-1, -1], [-1, -1]]    #first index array is used for White; 2nd 
 en_flag = -1
 King_location = [[7, 4], [0, 4]]
 Checked = False
+player = ['Human', 'AI']
+
+#----- AI TESTS
+
+def ai_call():
+  global White_moves, Black_moves
+  #result = lazy.lazy_pick(Moves_Tuple)
+  W_moves = copy.deepcopy(White_moves)
+  B_moves = copy.deepcopy(Black_moves)
+  result = mini_max(board, W_moves, B_moves, 3)
+  print("AI RETURNED", result)
+
+  move_from = (result[0][0], result[0][1])
+  move_to = (result[1][0], result[1][1])
+
+  return move_from, move_to
+
+#-------
+
+def ai_get(move_to, move_from, temp):
+  global board, White_moves, Black_moves, Playing, message 
+
+
+
+  score = bad_evaluate(temp)
+  #print("AI GET:",move_to)
+  #captured = board[move_to[0]][move_to[1]] #get captured peice
+  #capturing = board[move_from[0]][move_from[1]]
+
+  #scoring = {B_King: 1000, 
+             #B_Quee: 9,
+             #B_Rook: 5,
+             #B_Bish: 3, 
+             #B_Knig: 3,
+             #B_Pawn: 1,
+            # W_King: -1000, 
+             #W_Quee: -9,
+             #W_Rook: -5,
+             #W_Bish: -3, 
+             #W_Knig: -3, 
+             #W_Pawn: -1,
+             #Empty_: -0}
+
+  #score = scoring[capturing]
+
+  return score 
+
+#----
+
+#--------
+
+
+def ideal_pick(board, moves_tuple):
+  moves = moves_tuple 
+  scores = []
+
+  for i in range(len(moves)):
+    temp = board
+    print(moves[i][0], moves[i][1])
+    value = ai_get(moves[i][0], moves[i][1])
+
+    scores.append(value)
+
+  if White_Playing: 
+    best_move = moves[scores.index(max(scores))]
+  else:
+    best_move = moves[scores.index(min(scores))]
+
+  return best_move[0], best_move[1]
+
+
+
+
+#https://blog.devgenius.io/simple-min-max-chess-ai-in-python-2910a3602641 - From here, do referencing.
+
+#----
+
+def mini_max(board, W_Moves, B_Moves, depth):
+  global White_Playing
+  moves = W_Moves if White_Playing else B_Moves
+  scores = []
+
+  if White_Playing and W_Moves == []:
+    scores = [0]
+    return None
+  elif B_Moves == []:
+    scores = [0]
+    return None
+
+  for i in range(len(moves)):
+    temp = copy.deepcopy(board)
+    value = ai_get(moves[i][0], moves[i][1], temp)
+    #perform the move
+    White_Moves, Black_Moves, temp = ai_perform(W_Moves, B_Moves, moves[i][0], moves[i][1], temp)
+
+    if depth > 1:
+      #print("DEPTH:", depth)
+      temp_best_move = mini_max(temp, White_Moves, Black_Moves, depth - 1)
+      #print("temp best move", temp_best_move)
+      value = ai_get(temp_best_move[0], temp_best_move[1], temp)
+      #print(value)
+      #perform the move 
+      White_Moves, Black_moves, temp = ai_perform(W_Moves, B_Moves, moves[i][0], moves[i][1], temp)
+      #check for no possible moves
+
+    scores.append(value)
+    #print("SCORES", scores)
+
+  #print(len(White_Moves), len(Black_Moves), "LENGTHS")
+
+  #print(scores)
+  if White_Playing:
+    best_move = moves[scores.index(max(scores))]
+    White_Playing = False
+  else:
+    #print(scores.index(min(scores)), "moves:", moves)
+    best_move = moves[scores.index(min(scores))]
+    White_Playing = True
+
+  return best_move
+
+
+
+
+  #reformat to include alpha beta prunning - geeks for geeks alpha beta pruning to improve efficency - prevent repeated. 
+        
+#----
+
+def ai_perform(White_moves, Black_moves, move_from, move_to, temp):
+
+  #Need to perform the move
+  temp = perform(move_to, move_from, temp)
+  
+  #Generate new legal moves
+  map = generate(move_to, move_from)
+  W_Moves, B_Moves = explode(map)
+  #print(len(White_moves), len(Black_moves))
+
+  #print(np.matrix(temp))
+
+  return White_moves, Black_moves, temp
+  
+  
+#----
+
+def bad_evaluate(temp):
+
+  scoring = {B_King: -1000, 
+     B_Quee: -9,
+     B_Rook: -5,
+     B_Bish: -3, 
+     B_Knig: -3,
+     B_Pawn: -1,
+     W_King: 1000, 
+     W_Quee: 9,
+     W_Rook: 5,
+     W_Bish: 3, 
+     W_Knig: 3, 
+     W_Pawn: 1,
+     Empty_: 0}
+
+  score = 0
+
+  for i in range(len(temp)):
+    for j in range(len(temp[i])):
+      score += scoring[temp[i][j]]
+
+  return score
+  
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
 
 # (5) --------- Main gameplay loop
 
@@ -711,16 +921,26 @@ while Playing:
   while not Valid:
     
     #Get inputs from users - using string literals to produce visual spacing
-    move_from = input(f"location to move from, (x,y) {space*10}")
-    move_to = input(f"location to move to, (x,y) {space*12}")     
+    if player[Time_Stamp % 2] == 'Human':
+      move_from = input(f"location to move from, (x,y) {space*10}")
+      move_to = input(f"location to move to, (x,y) {space*12}")     
+
+      #Process accordingly and normalise
+      move_to, move_from = action(move_to, move_from)
+      
+    else:
+      move_from, move_to = ai_call()
+      print("Results", move_from, move_to, Time_Stamp)
 
     #Process accordingly and normalise
-    move_to, move_from = action(move_to, move_from)
+    #ove_to, move_from = action(move_to, move_from)
 
     #Perform exceptions; 
     Valid = legal(move_to, move_from, Moves_Tuple)
     belonging(move_from, Moves_Tuple)
     #absurd(move_to, move_from)
+
+    print("FAILED VALID")
 
   #Check to see if the move is elegible for enpassant 
   if board[move_from[1]][move_from[0]] in PAWN:
@@ -748,16 +968,16 @@ while Playing:
 
   White_moves, Black_moves = explode(map)
 
-  print("DIRECT", move_from, board[move_to[1]][move_to[0]])
+  #print("DIRECT", move_from, board[move_to[1]][move_to[0]])
   if board[move_to[1]][move_to[0]] in KING: 
-    print("CHANGED")
+    #print("CHANGED")
     if White_Playing:
       King_location[0][1] = move_to[0]
       King_location[0][0] = move_to[1]
     else:
       King_location[1][1] = move_to[0]
       King_location[1][0] = move_to[1]
-  print(move_from[0], move_from[1], King_location)
+  #print(move_from[0], move_from[1], King_location)
 
   flag_map = flag_the_map(White_moves, Black_moves)
 
@@ -769,8 +989,8 @@ while Playing:
   map = load(King_location[0][1], King_location[0][0], King_location[0], map)
     #print("BlackPlaying")
 
-  print("Additional", map, White_Playing)
-  mark(map)
+  #print("Additional", map, White_Playing)
+  #mark(map)
   White_moves, Black_moves = explode(map)
 
   #White_moves = unique(White_moves)
@@ -788,9 +1008,9 @@ while Playing:
 print("!!!!!!!!!!!!!!!!!! GAME EXITED !!!!!!!!!!!!!!!!!!!!!!")
 
 if White_Playing:
-  print(" ----------- White won by Checkmate ------------")
+  print("------------ White won", message ,"-------------")
 else:
-  print(" ----------- Black won by Checkmate ------------")
+  print(" ----------- Black won", message," -------------")
 
 
 
