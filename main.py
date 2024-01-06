@@ -4,6 +4,7 @@
 import numpy as np
 import Moves_Inital
 import copy
+import random
 import lazyai as lazy
 global board, White_Playing, White_moves, Black_moves, Moves_Tuple, Blocked_Tuple, Time_Stamp
 space = ' '
@@ -210,9 +211,9 @@ def pawn(create, White_Playing):
 
   create_x, create_y = create[0], create[1]
 
-  if (White_Playing and create_y == 6) and (board[4][create_x] not in PEICE): 
+  if (White_Playing and create_y == 6) and (board[4][create_x] not in PEICE) and (board[5][create_x] not in PEICE): 
     new = load(create_x, 4, create, new)
-  if (not White_Playing) and (create_y == 1) and (board[3][create_x] not in PEICE):
+  if (not White_Playing) and (create_y == 1) and (board[3][create_x] not in PEICE) and (board[2][create_x] not in PEICE):
     new = load(create_x, 3, create, new)
 
   #Handle diagional captures
@@ -396,8 +397,8 @@ def adjecent(create):
         new = load(pivot[i][0], pivot[i][1], create, new)
 
 
-  if (new == []) and attacked(create):
-    in_check(create)
+  #if (new == []) and attacked(create):
+    #in_check(create)
     
   return new
 
@@ -718,20 +719,39 @@ en_location = [[-1, -1], [-1, -1]]    #first index array is used for White; 2nd 
 en_flag = -1
 King_location = [[7, 4], [0, 4]]
 Checked = False
-player = ['Human', 'AI']
+player = ['Human','AI']
+
 
 #----- AI TESTS
 
 def ai_call():
   global White_moves, Black_moves
   #result = lazy.lazy_pick(Moves_Tuple)
+  temp = copy.deepcopy(board)
   W_moves = copy.deepcopy(White_moves)
   B_moves = copy.deepcopy(Black_moves)
-  result = mini_max(board, W_moves, B_moves, 3)
+
+  #Need to shuffle order of moves_tuple
+  #random.shuffle(W_moves)
+  #random.shuffle(B_moves)
+  #print("Shuffled!", W_moves, B_moves)
+
+
+
+  
+  #result = mini_max(board, W_moves, B_moves, 3)
+
+  MAX, MIN, cap = 100000000000, -1000000000000, 4
+  alpha = 1000000000000000
+  beta = -1000000000000000
+  result = improved_mini_max(temp, W_moves, B_moves, White_Playing, MIN, MAX, 5)
+  #result = alphabeta_min(alpha, beta, board, W_moves, B_moves, 10)
   print("AI RETURNED", result)
 
   move_from = (result[0][0], result[0][1])
   move_to = (result[1][0], result[1][1])
+
+  print("MOVING", board[move_from[1]][move_from[0]], "TO:", board[move_to[1]][move_to[0]])
 
   return move_from, move_to
 
@@ -776,7 +796,7 @@ def ideal_pick(board, moves_tuple):
 
   for i in range(len(moves)):
     temp = board
-    print(moves[i][0], moves[i][1])
+    #print(moves[i][0], moves[i][1])
     value = ai_get(moves[i][0], moves[i][1])
 
     scores.append(value)
@@ -808,23 +828,24 @@ def mini_max(board, W_Moves, B_Moves, depth):
     return None
 
   for i in range(len(moves)):
-    temp = copy.deepcopy(board)
-    value = ai_get(moves[i][0], moves[i][1], temp)
-    #perform the move
-    White_Moves, Black_Moves, temp = ai_perform(W_Moves, B_Moves, moves[i][0], moves[i][1], temp)
+    if board[moves[i][0][1]][moves[i][0][0]] != Empty_:
+      temp = copy.deepcopy(board)
+      #W_Moves = copy.deepcopy(W_Moves)
+      #B_Moves = copy.deepcopy(B_Moves)
+      #perform the move
+      W_Moves, B_Moves, temp = ai_perform(W_Moves, B_Moves, moves[i][0], moves[i][1], temp)
+      value = bad_evaluate(temp, W_Moves, B_Moves)
 
-    if depth > 1:
-      #print("DEPTH:", depth)
-      temp_best_move = mini_max(temp, White_Moves, Black_Moves, depth - 1)
-      #print("temp best move", temp_best_move)
-      value = ai_get(temp_best_move[0], temp_best_move[1], temp)
-      #print(value)
-      #perform the move 
-      White_Moves, Black_moves, temp = ai_perform(W_Moves, B_Moves, moves[i][0], moves[i][1], temp)
-      #check for no possible moves
+      if depth > 1:
+        #print("DEPTH:", depth)
+        temp_best_move = mini_max(temp, W_Moves, B_Moves, depth - 1)
+        #print("temp best move", temp_best_move)
+        W_Moves, B_Moves, temp = ai_perform(W_Moves, B_Moves, moves[i][0], moves[i][1], temp)
+        value = bad_evaluate(temp, W_Moves, B_Moves)
+        #check for no possible moves
 
-    scores.append(value)
-    #print("SCORES", scores)
+      scores.append(value)
+      #print("SCORES", scores)
 
   #print(len(White_Moves), len(Black_Moves), "LENGTHS")
 
@@ -846,40 +867,245 @@ def mini_max(board, W_Moves, B_Moves, depth):
         
 #----
 
-def ai_perform(White_moves, Black_moves, move_from, move_to, temp):
+def improved_mini_max(board, W_Moves, B_Moves, White_Playing, alpha, beta, depth):
+  global WHITE, BLACK, Empty_
+  moves = W_Moves if White_Playing else B_Moves
+  scores = []
+  values = []
+  value = 0
+  temp = copy.deepcopy(board)
+  #print(np.matrix(temp))
+
+  if White_Playing and W_Moves == []:
+    scores = [0]
+    return None
+  elif B_Moves == []:
+    scores = [0]
+    return None
+
+  #Inital values of Alpha and Beta
+
+  #if depth == cap and White_Playing:
+    #return moves[scores.index(max(scores))]
+  #elif depth == cap and not White_Playing:
+    #return moves[scores.index(min(scores))]
+
+  if White_Playing:   #hence, maximising player
+    best = alpha
+    #Recur for all children 
+    for i in range(len(moves)-1):
+      #print("NEW MOVE", i)
+      temp = copy.deepcopy(board)
+      values = []
+      valid = []
+      #print("White Playing", temp[moves[i][0][0]][moves[i][0][1]])
+      if temp[moves[i][0][0]][moves[i][0][1]] in WHITE:
+        #print("White Playing", temp[moves[i][0][0]][moves[i][0][1]])
+        #if temp[moves[i][1][0]][moves[i][1][1]] in BLACK:
+          #value = -10
+        valid.append(moves[i])
+        W_Moves, B_Moves, temp = ai_perform(W_Moves, B_Moves, moves[i][0], moves[i][1], temp)
+        value += bad_evaluate(temp, W_Moves, B_Moves)
+        #allow for another move
+        if depth > 1:
+          temp_best_move = improved_mini_max(temp, W_Moves, B_Moves, not White_Playing, alpha, beta, depth - 1)
+          W_Moves, B_Moves, temp = ai_perform(W_Moves, B_Moves, temp_best_move[0], temp_best_move[1], temp)
+          value = bad_evaluate(temp, W_Moves, B_Moves)
+          values.append(value)
+          #print(values)
+        else:
+          values.append(value)
+        value = max(values)
+        best = max(best, value)
+        alpha = max(alpha, best)
+        scores.append(value)
+        if beta <= alpha:
+          #print("AB SUCESS - MAX PLAYER")
+          #scores.append(value)
+          break
+
+        #Do error checking for stalemate
+      else:
+        scores.append(0)
+
+    #print(valid, scores)
+    return moves[scores.index(max(scores))]
+
+  if not White_Playing:       #hence, minimising player
+    best = beta
+    #Recur for all children
+    for i in range(len(moves)-1):
+      temp = copy.deepcopy(board)
+      values = []
+      valid = []
+      #print("Black Playing", temp[moves[i][0][0]][moves[i][0][1]])
+      if temp[moves[i][0][0]][moves[i][0][1]] in BLACK:
+        #print("Black Playing", temp[moves[i][0][0]][moves[i][0][1]])
+        #if temp[moves[i][1][0]][moves[i][1][1]] in WHITE:
+          #value = -10
+        valid.append(moves[i])
+        #print(valid)
+        W_Moves, B_Moves, temp = ai_perform(W_Moves, B_Moves, moves[i][0], moves[i][1], temp)
+        value += bad_evaluate(temp, W_Moves, B_Moves)
+        #perform the move
+        if depth > 1:
+          temp_best_move = improved_mini_max(temp, W_Moves, B_Moves, not White_Playing, alpha, beta, depth - 1)
+          W_Moves, B_Moves, temp = ai_perform(W_Moves, B_Moves, temp_best_move[0], temp_best_move[1], temp)
+          value = bad_evaluate(temp, W_Moves, B_Moves)
+          values.append(value)
+          #print(values)
+        else:
+          values.append(value)
+        value = min(values)
+        best = min(best, value)
+        beta = min(beta, best)
+        scores.append(value)
+        if beta <= alpha:
+          #print("AB SUCCESS, MIN PLAYER")
+          #scores.append(value)
+          break
+
+
+        #Do error checking for stalemate
+      else:
+        scores.append(0)
+
+    #print(scores)
+    #print(moves[scores.index(min(scores))])
+    #print(valid, scores)
+    return moves[scores.index(min(scores))]
+
+  #else:
+    #print("OTHER CASE FIRED")
+    #if White_Playing:
+      #return moves[scores.index(max(scores))]
+    #else:
+      #return moves[scores.index(min(scores))]
+      
+        
+#CURRENT VERSION IS TAKING COMPLETE PUTS. 
+# LIKELY REVERT TO THIS IF THIS GOES DOWNHILL.
+
+# COMMENTARY - 6/01/23 
+# NEED TO - GENERIC PERFORMANCE IMPROVEMENTS
+# CHECKMATE AND DRAW CONDITIONS
+# REMOVE INVISIBLE ANS - POSSIBLE CHECK FOR LEGAL.
+      
+#-------------
+
+#PLEASE BE GOOD -https://ntietz.com/blog/alpha-beta-pruning/
+
+def alphabeta_max(alpha, beta, board, W_Moves, B_Moves, depth):
+
+    #for root node
+    if depth == 0:
+      return bad_evaluate(board, W_Moves, B_Moves)
+
+    for i in range(len(W_Moves)):
+      board = ai_perform(W_Moves, B_Moves, W_Moves[i][0], W_Moves[i][1], board)
+      score = alphabeta_min(alpha, beta, board, W_Moves, B_Moves, depth - 1)
+
+
+      #When the score is higher then UB; just fail to the alreadu established. 
+      if score >= beta:
+        return beta
+      #When we find a score higher then LB; we can adopt it. 
+      if score > alpha:
+        alpha = score
+
+    return alpha 
+
+
+def alphabeta_min(alpha, beta, board, W_Moves, B_Moves, depth):
+
+    #for root node
+    if depth == 0:
+      return bad_evaluate(board, W_Moves, B_Moves)
+
+    for i in range(len(B_Moves)):
+      #print(board)
+      board = ai_perform(W_Moves, B_Moves, B_Moves[i][0], B_Moves[i][1], board)
+      score = alphabeta_max(alpha, beta, board, W_Moves, B_Moves, depth - 1)
+
+      if score <= alpha:
+        return alpha 
+
+      if score < beta:
+        beta = score
+
+    return beta
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def ai_perform(W_Moves, B_Moves, move_from, move_to, temp):
+  global White_Playing
 
   #Need to perform the move
   temp = perform(move_to, move_from, temp)
+  #Then clean the respective legal move arrays 
+  #print(White_Playing, len(W_Moves), len(B_Moves))
+  if not White_Playing:                       
+    W_Moves = clean(move_from, W_Moves)
+    W_Moves = clean(move_to, W_Moves)
+    #B_Moves = clean(move_to, B_Moves)   
+    #B_Moves = clean(move_from, B_Moves)
+  else:  #Otherwise; black player
+    B_Moves = clean(move_from, B_Moves)
+    B_Moves = clean(move_to, B_Moves)
+    #W_Moves = clean(move_to, W_Moves)  
+    #B_Moves = clean(move_from, W_Moves)
+
+ # print(len(W_Moves), len(B_Moves))
   
   #Generate new legal moves
   map = generate(move_to, move_from)
+  board = temp
   W_Moves, B_Moves = explode(map)
   #print(len(White_moves), len(Black_moves))
 
   #print(np.matrix(temp))
 
-  return White_moves, Black_moves, temp
+  return W_Moves, B_Moves, temp
   
   
 #----
 
-def bad_evaluate(temp):
+def bad_evaluate(temp, W_Moves, B_Moves):
 
   scoring = {B_King: -1000, 
      B_Quee: -9,
      B_Rook: -5,
-     B_Bish: -3, 
+     B_Bish: -3,
      B_Knig: -3,
      B_Pawn: -1,
      W_King: 1000, 
      W_Quee: 9,
      W_Rook: 5,
      W_Bish: 3, 
-     W_Knig: 3, 
+     W_Knig: 3,
      W_Pawn: 1,
+     W_En_Passant_Token: -0.2, 
+     B_En_Passant_Token: 0.2,
      Empty_: 0}
 
-  score = 0
+  #print(len(W_Moves), len(B_Moves))
+  score = ((len(W_Moves) * 0.05) - (len(B_Moves) * 0.05)) 
 
   for i in range(len(temp)):
     for j in range(len(temp[i])):
@@ -907,7 +1133,7 @@ def bad_evaluate(temp):
 Playing = True
 White_Playing = True 
 print(np.matrix(board))
-Time_Stamp = - 1
+Time_Stamp = -1
 while Playing:
   #Pass the turn to the next player 
   Time_Stamp += 1
