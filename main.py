@@ -1,4 +1,4 @@
-#Main.py - Chess AI educational demonstration
+##Main.py - Chess AI educational demonstration
 #This is the shell of the chess AI program; which GUI.py calls from. 
 
 import numpy as np
@@ -17,7 +17,7 @@ MIN = -10000000000
 
 def turn(Time_Stamp):
   #INDEPENDENT: Determines the current players turn, depending on time_stamp; and loads Moves_Tuple
-  
+
   if Time_Stamp % 2 == 1: 
     print(" Black Playing...") 
     Moves_Tuple = Black_moves
@@ -235,7 +235,7 @@ def pawn(create, White_Playing):
     if (create_y + 1) <= 7:
       if not(White_Playing) and board[create_y + 1][create_x + 1] in WHITE:
         new = load(create_x + 1, create_y + 1, create, new)
-    
+
   return new  
 
   #----
@@ -346,7 +346,7 @@ def knight(create, gen):
            (create_y + 1, create_x - 2),
            (create_y - 1, create_x + 2),
            (create_y - 1, create_x - 2)]
-  
+
   new = []
   Blocked_Tuple = []
 
@@ -358,12 +358,12 @@ def knight(create, gen):
       elif gen:
         if board[pivot[i][1]][pivot[i][0]] in KNIGHT:
           Blocked_Tuple = load(pivot[i][0], pivot[i][1], create, Blocked_Tuple)  #Handle edge case for moves
-        
+
   if not gen:
     return new
   else: 
     return Blocked_Tuple 
-    
+
   #----
 
 def own(move_from, move_to):
@@ -376,9 +376,9 @@ def own(move_from, move_to):
     return True
   else:  #otherwise;
     return False 
-    
+
 #----
-  
+
 
 def adjecent(create):
 
@@ -391,7 +391,7 @@ def adjecent(create):
            (create_x + 1, create_y - 1), 
            (create_x, create_y - 1    ), 
            (create_x - 1, create_y - 1)]
-  
+
   new = []
 
   for i in range(len(pivot)):         
@@ -402,7 +402,7 @@ def adjecent(create):
 
   #if (new == []) and attacked(create):
     #in_check(create)
-    
+
   return new
 
   #----
@@ -418,7 +418,7 @@ def direct(create):
 def attacked(create):
   global flag_map, White_Playing 
 
-  
+
   peice = board[create[1]][create[0]]
 
   pointer = 0
@@ -448,7 +448,7 @@ def legal(move_to, move_from, move_space):
 
 def belonging(move_from, Moves_Tuple):
   #INDEPENDENT HELPER: Output legal moves 
-  
+
   kept = []
   for i in range(len(Moves_Tuple)-1):
     if move_from == Moves_Tuple[i][0]:
@@ -466,7 +466,7 @@ def clean(delete, moves_structure):
   for i in range(len(moves_structure)):
     if (moves_structure[i][0] != cleaned):
       checked.append(moves_structure[i])
-    
+
     #else:                                        #Adaptive flagging attempt - need to refactor later! to be more efficent rather than a 
 
      # x_value = moves_structure[i][1][1]
@@ -480,7 +480,7 @@ def clean(delete, moves_structure):
         #data = flag_map[x_value][y_value]
         #data = (data[0], int(data[1]) - 1)
         #flag_map[x_value][y_value] = data
-  
+
   return checked
 
   #----
@@ -503,7 +503,7 @@ def blocked(create, move_from_x, move_from_y):
   else:
     Attack_Tuple = load(move_from_x, move_from_y, create, Attack_Tuple)
   return True
-    
+
   #----
 
 def generate(move_from, move_to):
@@ -519,7 +519,7 @@ def generate(move_from, move_to):
   #for moving_from
   locations += straight(move_from, True)
   locations += diagonal(move_from, True)       
-  
+
   #for moving_to
   locations += straight(move_to, True)
   locations += diagonal(move_to, True)
@@ -565,7 +565,7 @@ def explode(mapping):
 
   #White_moves = unique(White_moves)      #testing for duplicates
   #Black_moves = unique(Black_moves)
-  
+
   #====
 
 def mark(locations):
@@ -616,7 +616,7 @@ def passant_check(move_from, move_to, en_location):
 
   inital_y = move_from[1]
   final_y = move_to[1]
-  
+
   #Check to see if pawn move is elegible for en_passant
   if (inital_y == 1 and final_y == 3) or (inital_y == 6 and final_y == 4): 
     if (move_from[0] - 1) >= 0:   #Do a range check 
@@ -657,7 +657,7 @@ def in_check(create):
   #Need to check if actually attacked
 
   print("---------------------------", Checked)
-  
+
   peice = board[create[1]][create[0]]
   #print(peice)
 
@@ -671,8 +671,8 @@ def in_check(create):
     Playing = False
   if flag_map[create[1]][create[0]][pointer] == 1:
     Checked = True
-  
-  
+
+
 # (1) ---------- Loaded values
 
 W_Pawn = "♟︎"
@@ -730,7 +730,7 @@ player = ['Human','AI']
 #----- AI TESTS
 
 def ai_call():
-  global White_moves, Black_moves
+  global White_moves, Black_moves, cap 
   #result = lazy.lazy_pick(Moves_Tuple)
   temp = copy.deepcopy(board)
   W_moves = copy.deepcopy(White_moves)
@@ -743,13 +743,15 @@ def ai_call():
 
 
 
-  
+
   #result = mini_max(board, W_moves, B_moves, 3)
 
   MAX = 1000
   MIN = -1000
   print("INITAL", len(W_moves), len(B_moves))
-  result = optimised_min_max(temp, W_moves, B_moves, White_Playing, MIN, MAX, 3)
+  adaptive(W_moves, B_moves, 8)
+  print("Running at", cap)
+  result = optimised_min_max(temp, W_moves, B_moves, White_Playing, MIN, MAX, cap)
   #result = improved_mini_max(temp, W_moves, B_moves, White_Playing, MIN, MAX, 3)
   #result = alphabeta_min(alpha, beta, board, W_moves, B_moves, 10)
   print("AI RETURNED", result)
@@ -870,7 +872,7 @@ def mini_max(board, W_Moves, B_Moves, depth):
 
 
   #reformat to include alpha beta prunning - geeks for geeks alpha beta pruning to improve efficency - prevent repeated. 
-        
+
 #----
 
 def improved_mini_max(board, W_Move, B_Move, White_Playing, alpha, beta, depth):
@@ -1009,8 +1011,8 @@ def improved_mini_max(board, W_Move, B_Move, White_Playing, alpha, beta, depth):
       #return moves[scores.index(max(scores))]
     #else:
       #return moves[scores.index(min(scores))]
-      
-        
+
+
 #CURRENT VERSION IS TAKING COMPLETE PUTS. 
 # LIKELY REVERT TO THIS IF THIS GOES DOWNHILL.
 
@@ -1020,40 +1022,46 @@ def improved_mini_max(board, W_Move, B_Move, White_Playing, alpha, beta, depth):
 # REMOVE INVISIBLE ANS - POSSIBLE CHECK FOR LEGAL.
 
 #https://www.geeksforgeeks.org/minimax-algorithm-in-game-theory-set-4-alpha-beta-pruning/
-      
+
 #-------------
 
 #PLEASE BE GOOD -https://ntietz.com/blog/alpha-beta-pruning/
 
 def optimised_min_max(board, W_Move, B_Move, White_Playing, alpha, beta, depth):
+  global cap 
 
-  if len(W_Move) == 0 or len(B_Move) == 0:
-    return 0
+  if (len(W_Move) == 0 and White_Playing) or (len(B_Move) == 0 and not White_Playing):
+    return 0  #As stalemate immediately. 
+
+  if depth == 0:
+    #Then start diving :)
+    #print(board, W_Move, B_Move, White_Playing, alpha, beta, depth)
+    return dive_min_max(board, W_Move, B_Move, White_Playing, alpha, beta, depth)
 
   #print(len(W_Move), len(B_Move))
-  complexity = int(len(W_Move) + len(B_Move))
-  if depth <= adaptive(complexity):   
-    score = bad_evaluate(board, W_Move, B_Move)
+  #complexity = int(len(W_Move) + len(B_Move))
+  #if depth <= adaptive(complexity):   
+    #score = bad_evaluate(board, W_Move, B_Move)
     #Then; we have to 'skip stones'
-    W_Capture = []
-    B_Capture = []
-    for i in range(len(W_Move)-1):
-      if board[W_Move[i][1][1]][W_Move[i][1][0]] in BLACK:
-        W_Capture.append(W_Move[i])
-    for i in range(len(B_Move)-1):
-      if board[B_Move[i][1][1]][B_Move[i][1][0]] in WHITE:
-        B_Capture.append(B_Move[i])
+    #W_Capture = []
+    #B_Capture = []
+    #for i in range(len(W_Move)-1):
+      #if board[W_Move[i][1][1]][W_Move[i][1][0]] in BLACK:
+        #W_Capture.append(W_Move[i])
+    #for i in range(len(B_Move)-1):
+      #if board[B_Move[i][1][1]][B_Move[i][1][0]] in WHITE:
+        #B_Capture.append(B_Move[i])
     #therefore, 
-    if White_Playing and B_Capture != []:
-      score += optimised_min_max(board, W_Capture, B_Capture, False, alpha, beta, 0)
-    if not White_Playing and W_Capture != []:
-      score += optimised_min_max(board, W_Capture, B_Capture, True, alpha, beta, 0)
-    return score
+    #if White_Playing and B_Capture != []:
+      #score += optimised_min_max(board, W_Capture, B_Capture, False, alpha, beta, 0)
+    #if not White_Playing and W_Capture != []:
+      #score += optimised_min_max(board, W_Capture, B_Capture, True, alpha, beta, 0)
+    #return score
 
   #print(len(W_Move), len(B_Move), "LENGTHS", depth)
 
   moves, value, scores = [], [], []
-  MAX, MIN, cap = 100000, -100000, 3
+  MAX, MIN = 1000, -1000
 
   if White_Playing:
     best = MIN
@@ -1095,38 +1103,98 @@ def optimised_min_max(board, W_Move, B_Move, White_Playing, alpha, beta, depth):
       beta = min(beta, best)
       if beta <= alpha:
         break                  #Prune the tree as limits reached - if playing optimally; nodes arent considered. 
-    
+
     if depth != cap:
       return best #Return the played (minimised) score for the state.
-     
+
   if depth == cap:        #ORIGINAL CONDITION.
-    print("FINAL", moves, value)
+    print("FINAL", moves)
+    print(scores)
+    print(max(scores)) if White_Playing else min(scores)
     return moves[scores.index(max(scores))] if White_Playing else moves[scores.index(min(scores))]
 
-      
+
+#-----
+
+def dive_min_max(board, W_Move, B_Move, White_Playing, alpha, beta, depth): 
+
+  #print(depth)
+
+  if (len(W_Move) == 0 and White_Playing) or (len(B_Move) == 0 and not White_Playing):
+    return 0  #As stalemate immediately. 
+
+  #Reaching the 'ocean floor' 
+ #if depth <= adaptive(len(W_Move) + len(B_Move)):
+    #print("REACHED FLOOR")
+    #return bad_evaluate(board, W_Move, B_Move)
+
+  if White_Playing:
+    best = MIN
+    #Verifify that all moves are captures
+    W_Capture = []
+    for i in range(len(W_Move)):
+      if board[W_Move[i][1][1]][W_Move[i][1][0]] in BLACK:
+        W_Capture.append(W_Move[i])
+        if board[W_Move[i][1][1]][W_Move[i][1][0]] == B_King:
+          return 100 #As checkmate effectively; 
+    #print(W_Capture, depth)
+    #Then otherwise; we should 'skip stones' - restricting to the capturing moves. 
+    for i in range(len(W_Capture)):
+      temp = copy.deepcopy(board)
+      W_Move, B_Move, temp = ai_perform(W_Move, B_Move, W_Capture[i][0], W_Capture[i][1], temp)
+      value = dive_min_max(temp, W_Move, B_Move, False, alpha, beta, depth - 1)
+    #Though this likely is not necessary; AB prunning 
+      best = max(best, value)
+      alpha = max(alpha, best)
+      if beta <= alpha: 
+        break             #As ab declares path as unreasonable. 
+
+    if W_Capture == []:
+      return bad_evaluate(board, W_Move, B_Move)
+    else:
+      return best #Therefore - takes maximised diving score.
+
+  if not White_Playing:
+    best = MAX
+    #Verifiy that all moves are captures
+    B_Capture = []
+    for i in range(len(B_Move)):
+      if board[B_Move[i][1][1]][B_Move[i][1][0]] in WHITE:
+        B_Capture.append(B_Move[i])
+        if board[B_Move[i][1][1]][B_Move[i][1][0]] == W_King:
+          return -100 #As checkmate effectively; 
+    #print(B_Capture, depth)
+    #Then otherwise, we should 'skip stones' - restricting to the capturing moves. 
+    for i in range(len(B_Capture)):
+      temp = copy.deepcopy(board)
+      W_Move, B_Move, temp = ai_perform(W_Move, B_Move, B_Capture[i][0], B_Capture[i][1], temp)
+      value = dive_min_max(temp, W_Move, B_Move, False, alpha, beta, depth - 1)
+    #Though this is not like necessary, AB prunning 
+      best = min(best, value)
+      beta = min(beta, best)
+      if beta <= alpha:
+        break              #As ab declares path as unreasonable 
+
+    if B_Capture == []:
+      return bad_evaluate(board, W_Move, B_Move)
+    else:
+      return best #Therefore - take minimised diving score. 
 
 
 
-  
 
 
 
 
 
-def adaptive(Tot_Possible):
-  if Tot_Possible > 80: 
-    return 2
-  elif Tot_Possible > 65: 
-    return 1
-  elif Tot_Possible > 50:
-    return 0
-  elif Tot_Possible > 40:
-    return -1
-  elif Tot_Possible > 30: 
-    return -2
-  elif Tot_Possible > 20:
-    return -4
-  return -5
+
+def adaptive(W_Moves, B_Moves, Performance_Fact):
+  global cap 
+  cap = 4
+  if cap < 2:
+    cap = 2
+  if cap > 5:
+    cap = 5
 
 
 
@@ -1162,7 +1230,7 @@ def ai_perform(W_Moves, B_Moves, move_from, move_to, temp):
     #B_Moves = clean(move_from, W_Moves)
 
  # print(len(W_Moves), len(B_Moves))
-  
+
   #Generate new legal moves
   board = temp
   map = generate(move_to, move_from) #rev
@@ -1172,8 +1240,8 @@ def ai_perform(W_Moves, B_Moves, move_from, move_to, temp):
   #print(np.matrix(temp))
 
   return W_Moves, B_Moves, temp
-  
-  
+
+
 #----
 
 def bad_evaluate(temp, W_Moves, B_Moves):
@@ -1204,21 +1272,21 @@ def bad_evaluate(temp, W_Moves, B_Moves):
       score += scoring[temp[i][j]]
 
       if temp[i][j] in BLACK:
-        score += (-0.01 * i)
+        score += (-0.05 * i)
       if temp[i][j] in WHITE:
-        score += (0.01 * (8-i))
+        score += (0.05 * (8-i))
 
   #print(score)
-        
+
 
   #print(score)
 
   return score
-  
 
 
 
-  
+
+
 
 # (5) --------- Main gameplay loop
 
@@ -1230,14 +1298,14 @@ while Playing:
   #Pass the turn to the next player 
   Time_Stamp += 1
   White_Playing, Moves_Tuple = turn(Time_Stamp)
-  
+
 
   # Asking the user for a move
   Valid = False
   map = []
-  
+
   while not Valid:
-    
+
     #Get inputs from users - using string literals to produce visual spacing
     if player[Time_Stamp % 2] == 'Human':
       move_from = input(f"location to move from, (x,y) {space*10}")
@@ -1245,7 +1313,7 @@ while Playing:
 
       #Process accordingly and normalise
       move_to, move_from = action(move_to, move_from)
-      
+
     else:
       move_from, move_to = ai_call()
       print("Results", move_from, move_to, Time_Stamp)
@@ -1265,7 +1333,7 @@ while Playing:
     promotion(move_to, move_from)
 
   #Printing inputs
-  
+
   board = perform(move_to, move_from, board)
   map += generate(move_to, move_from)
 
